@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>🐟 海产订单管理</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--blue:#4472C4;--blue-dark:#3461a8;--green:#28a745;--red:#dc3545;--orange:#fd7e14;--bg:#f5f5f5;--card-bg:#fff;--text:#333;--text-light:#666;--border:#e0e0e0;--radius:12px;--shadow:0 2px 8px rgba(0,0,0,.08)}
@@ -142,6 +143,31 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 /* 月份选择器 */
 .month-selector{display:flex;align-items:center;gap:6px}
 .month-input{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem}
+
+/* 订单图片预览 */
+.order-preview-wrap{position:fixed;left:-9999px;top:0;z-index:-1}
+.order-preview{width:750px;background:#fff;padding:40px 50px;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+.order-preview .op-company{text-align:center;font-size:28px;font-weight:900;margin-bottom:6px}
+.order-preview .op-english{text-align:center;font-size:18px;font-weight:700;margin-bottom:14px;text-transform:uppercase}
+.order-preview .op-info{text-align:center;font-size:14px;color:#555;margin-bottom:2px}
+.order-preview .op-divider{border:none;border-top:2px solid #333;margin:18px 0}
+.order-preview .op-customer{font-size:16px;margin-bottom:10px;display:flex;gap:40px;flex-wrap:wrap}
+.order-preview .op-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px}
+.order-preview .op-table th{background:#f0f0f0;padding:10px 6px;border:1.5px solid #333;font-weight:700;text-align:center}
+.order-preview .op-table td{padding:8px 6px;border:1.5px solid #333;text-align:center}
+.order-preview .op-table .td-name{text-align:left}
+.order-preview .op-total{text-align:right;font-size:17px;font-weight:700;margin:8px 0}
+.order-preview .op-note{font-size:15px;color:#555;margin:4px 0}
+.order-preview .op-debt{margin-top:18px;padding-top:14px;border-top:1.5px dashed #999;font-size:15px}
+.order-preview .op-debt span{font-weight:700}
+.preview-modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;display:none;flex-direction:column;background:#fff}
+.preview-modal.show{display:flex}
+.preview-actions{display:flex;gap:10px;padding:12px 16px;background:#f8f9fa;border-bottom:1px solid var(--border);align-items:center;justify-content:center}
+.preview-actions .pbtn{padding:10px 24px;border-radius:8px;border:none;font-size:1rem;font-weight:600;cursor:pointer}
+.preview-actions .pbtn-primary{background:var(--blue);color:#fff}
+.preview-actions .pbtn-green{background:var(--green);color:#fff}
+.preview-image-wrap{flex:1;overflow:auto;display:flex;justify-content:center;padding:10px}
+.preview-image-wrap img{max-width:100%;height:auto;box-shadow:0 2px 16px rgba(0,0,0,.15)}
 </style>
 </head>
 <body>
@@ -284,6 +310,19 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 
 <!-- 编辑弹窗 -->
 <div class="modal" id="editModal"><div class="modal-bg" onclick="closeModal()"></div><div class="modal-box" id="editModalContent"></div></div>
+
+<!-- 订单图片隐藏渲染区 -->
+<div class="order-preview-wrap" id="orderPreviewWrap"><div class="order-preview" id="orderPreview"></div></div>
+
+<!-- 图片预览弹窗 -->
+<div class="preview-modal" id="previewModal">
+    <div class="preview-actions">
+        <button class="pbtn" onclick="closePreview()">✕ 关闭</button>
+        <button class="pbtn pbtn-primary" onclick="downloadImage()">📥 保存图片</button>
+        <button class="pbtn pbtn-green" id="btnDownloadExcel" onclick="downloadCurrentOrderExcel()">📊 下载Excel</button>
+    </div>
+    <div class="preview-image-wrap" id="previewImageWrap"></div>
+</div>
 
 <script>
 // ==================== 数据层 ====================
@@ -603,7 +642,10 @@ function checkSubmit() {
     btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5';
 }
 
-// ==================== 生成订单 Excel ====================
+// ==================== 生成订单（图片 + Excel） ====================
+let currentOrderImageData = null; // 保存当前生成的图片数据
+let currentOrderData = null;      // 保存当前订单数据
+
 function generateOrder() {
     const customerId = parseInt(document.getElementById('orderCustomer').value);
     const customer = DB.get('customers').find(c => c.id === customerId);
@@ -621,16 +663,84 @@ function generateOrder() {
         items: orderItems.map(i => ({...i})), createdAt: new Date().toISOString()
     };
     const orders = DB.get('orders'); orders.unshift(order); DB.set('orders', orders);
+    currentOrderData = order;
 
-    // Build Excel
-    const rows = buildOrderExcelRows(order, total);
-    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // 渲染订单HTML → 截图 → 预览
+    renderOrderToImage(order, function(imgData) {
+        currentOrderImageData = imgData;
+        showPreview(imgData, order);
+    });
+}
+
+// 渲染订单为HTML并截图
+function renderOrderToImage(order, callback) {
+    var html = buildOrderHTML(order);
+    var wrap = document.getElementById('orderPreview');
+    wrap.innerHTML = html;
+    // 让浏览器先渲染
+    setTimeout(function() {
+        html2canvas(wrap, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(function(canvas) {
+            callback(canvas.toDataURL('image/png'));
+        });
+    }, 200);
+}
+
+// 构建订单HTML（完美排版）
+function buildOrderHTML(order) {
+    var rows = '';
+    order.items.forEach(function(it, i) {
+        rows += '<tr><td>'+(i+1)+'</td><td class="td-name">'+esc(it.name)+'</td><td>'+esc(it.spec||'')+'</td><td>'+esc(it.unit)+'</td><td>'+it.quantity+'</td><td>'+it.sellPrice.toFixed(2)+'</td><td>'+(it.sellPrice*it.quantity).toFixed(2)+'</td></tr>';
+    });
+    var total = order.total;
+    return '<div class="op-company">深圳市亿客视频有限公司</div>' +
+        '<div class="op-english">MEIDAIZI BAG INDUSTRY CO,LTD.</div>' +
+        '<div class="op-info">地址：汕头市潮南区峡山街道</div>' +
+        '<div class="op-info">电话：18929622288&emsp;13539663322</div>' +
+        '<hr class="op-divider">' +
+        '<div class="op-customer">' +
+            '<span>收货单位：'+esc(order.customerName)+'</span>' +
+            '<span>联系人：'+esc(order.customerContact||'')+'</span>' +
+            '<span>订货日期：'+order.orderDate+'</span>' +
+            '<span>送货日期：'+(order.deliveryDate||'')+'</span>' +
+        '</div>' +
+        '<table class="op-table"><thead><tr><th>序号</th><th>商品名称</th><th>规格</th><th>单位</th><th>数量</th><th>单价(元)</th><th>金额(元)</th></tr></thead><tbody>'+rows+'</tbody></table>' +
+        '<div class="op-total">合计：¥'+total.toFixed(2)+'</div>' +
+        (order.note ? '<div class="op-note">备注：'+esc(order.note)+'</div>' : '') +
+        '<div class="op-debt">连上累欠：<span style="display:inline-block;min-width:120px;border-bottom:1px solid #333"></span></div>';
+}
+
+// 显示预览弹窗
+function showPreview(imgData, order) {
+    document.getElementById('previewImageWrap').innerHTML = '<img src="'+imgData+'" alt="订货单">';
+    document.getElementById('btnDownloadExcel').onclick = function() { downloadCurrentOrderExcel(); };
+    document.getElementById('previewModal').classList.add('show');
+}
+
+function closePreview() {
+    document.getElementById('previewModal').classList.remove('show');
+    currentOrderImageData = null;
+}
+
+// 下载图片
+function downloadImage() {
+    if (!currentOrderImageData) return;
+    var a = document.createElement('a');
+    a.href = currentOrderImageData;
+    a.download = '订货单_'+(currentOrderData?currentOrderData.customerName+'_'+currentOrderData.orderDate:'')+'.png';
+    a.click();
+}
+
+// 下载当前预览订单的Excel
+function downloadCurrentOrderExcel() {
+    if (!currentOrderData) return;
+    downloadOrderExcel(currentOrderData.id);
+    // 或者直接生成
+    var rows = buildOrderExcelRows(currentOrderData, currentOrderData.total);
+    var ws = XLSX.utils.aoa_to_sheet(rows);
     applyOrderExcelStyle(ws, rows);
-    const wb = XLSX.utils.book_new();
+    var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '订货单');
-    XLSX.writeFile(wb, `订货单_${order.customerName}_${order.orderDate}.xlsx`);
-
-    alert('✅ 订单已生成！');
+    XLSX.writeFile(wb, '订货单_'+currentOrderData.customerName+'_'+currentOrderData.orderDate+'.xlsx');
 }
 
 // ==================== 订单记录 ====================
@@ -645,7 +755,7 @@ function refreshOrderList() {
                 <div class="list-sub">${o.deliveryDate?'🚚'+o.deliveryDate+' · ':''}${o.items.length}种${o.note?' · 💬'+esc(o.note):''}</div>
                 <div class="order-sum">¥${o.total.toFixed(2)}</div>
             </div>
-            <div class="list-act"><button class="btn-sm btn-green" onclick="event.stopPropagation();downloadOrderExcel(${o.id})">📥</button></div>
+            <div class="list-act"><button class="btn-sm btn-green" onclick="event.stopPropagation();previewOrderImage(${o.id})">📥</button></div>
         </div>`).join('');
 }
 
@@ -659,8 +769,19 @@ function viewOrder(id) {
             <table class="detail-table"><thead><tr><th>品名</th><th>规格</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th></tr></thead>
             <tbody>${order.items.map(it => `<tr><td>${esc(it.name)}</td><td>${it.spec||''}</td><td>${esc(it.unit)}</td><td>${it.quantity}</td><td>¥${it.sellPrice.toFixed(2)}</td><td class="t-right">¥${(it.sellPrice*it.quantity).toFixed(2)}</td></tr>`).join('')}</tbody>
             <tfoot><tr><td colspan="5" class="t-right"><strong>合计</strong></td><td class="t-right total-cell">¥${order.total.toFixed(2)}</td></tr></tfoot></table></div>
-        <button class="btn btn-block" onclick="downloadOrderExcel(${order.id})">📥 下载 Excel</button>`;
+        <button class="btn btn-block" onclick="previewOrderImage(${order.id})">📥 查看/下载订货单</button>`;
     showPage('order-detail');
+}
+
+// 从历史订单生成图片预览
+function previewOrderImage(id) {
+    var order = DB.get('orders').find(function(o){return o.id === id;});
+    if (!order) return;
+    currentOrderData = order;
+    renderOrderToImage(order, function(imgData) {
+        currentOrderImageData = imgData;
+        showPreview(imgData, order);
+    });
 }
 
 function downloadOrderExcel(id) {
