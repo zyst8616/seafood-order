@@ -7,237 +7,283 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#4472C4;--blue-dark:#3461a8;--green:#28a745;--red:#dc3545;--bg:#f5f5f5;--card-bg:#fff;--text:#333;--text-light:#666;--border:#e0e0e0;--radius:12px;--shadow:0 2px 8px rgba(0,0,0,.08)}
+:root{--blue:#4472C4;--blue-dark:#3461a8;--green:#28a745;--red:#dc3545;--orange:#fd7e14;--bg:#f5f5f5;--card-bg:#fff;--text:#333;--text-light:#666;--border:#e0e0e0;--radius:12px;--shadow:0 2px 8px rgba(0,0,0,.08)}
 html{font-size:16px}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-tap-highlight-color:transparent}
 .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
 .page{display:none;flex:1;padding:12px;padding-bottom:80px}
 .page.active{display:block}
 
-/* 导航栏 */
+/* 导航 */
 .tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;display:flex;border-top:1px solid var(--border);z-index:100;padding:4px 0 env(safe-area-inset-bottom)}
-.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 0;border:none;background:none;font-size:.7rem;color:var(--text-light);cursor:pointer;transition:color .2s}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 0;border:none;background:none;font-size:.65rem;color:var(--text-light);cursor:pointer}
 .tab-btn.active{color:var(--blue);font-weight:600}
-.tab-btn .tab-icon{font-size:1.4rem;margin-bottom:1px}
+.tab-btn .tab-icon{font-size:1.3rem;margin-bottom:1px}
 
 /* 首页 */
-.home-header{text-align:center;padding:30px 0 20px}
-.home-icon{font-size:64px}
-.home-header h1{font-size:1.5rem;margin-top:8px}
-.home-buttons{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
-.btn-big{display:flex;flex-direction:column;align-items:center;padding:20px;border-radius:var(--radius);border:none;cursor:pointer;font-weight:600;text-decoration:none;color:#fff;min-height:76px;justify-content:center;transition:transform .1s}
+.home-header{text-align:center;padding:24px 0 16px}
+.home-header h1{font-size:1.3rem;margin-top:4px}
+.home-buttons{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.btn-big{display:flex;flex-direction:column;align-items:center;padding:16px;border-radius:var(--radius);border:none;cursor:pointer;font-weight:600;color:#fff;min-height:64px;justify-content:center;transition:transform .1s;text-decoration:none}
 .btn-big:active{transform:scale(.97)}
-.btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue-dark));box-shadow:0 4px 14px rgba(68,114,196,.35);color:#fff}
-.btn-big .btn-icon{font-size:28px}
-.btn-big .btn-label{font-size:1.1rem;margin-top:2px}
-.btn-big .btn-hint{font-size:.75rem;opacity:.7}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue-dark));box-shadow:0 3px 12px rgba(68,114,196,.3);color:#fff}
+.btn-big .btn-icon{font-size:26px}
+.btn-big .btn-label{font-size:1rem;margin-top:2px}
+.btn-big .btn-hint{font-size:.7rem;opacity:.7}
+.home-sub{display:flex;gap:8px}
+.home-sub .btn-big{flex:1}
 
 /* 页头 */
-.page-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.page-header h2{font-size:1.2rem}
+.page-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.page-header h2{font-size:1.1rem}
 
 /* 卡片 */
-.card{background:var(--card-bg);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
-.card-title{font-size:.95rem;font-weight:700;margin-bottom:10px}
+.card{background:var(--card-bg);border-radius:var(--radius);padding:12px;margin-bottom:8px;box-shadow:var(--shadow)}
+.card-title{font-size:.9rem;font-weight:700;margin-bottom:8px}
 
 /* 表单 */
 input,select,button{font-size:1rem;font-family:inherit}
-input[type="text"],input[type="tel"],input[type="number"],input[type="date"],select,.big-input{width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:8px;background:#fff;-webkit-appearance:none;appearance:none}
+input[type="text"],input[type="tel"],input[type="number"],input[type="date"],input[type="month"],select,.big-input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;background:#fff;-webkit-appearance:none;appearance:none}
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
 input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(68,114,196,.12)}
-.f-row{display:flex;gap:8px;margin-bottom:8px}
+.f-row{display:flex;gap:6px;margin-bottom:6px}
 .f-row-2>*{flex:1}
-.field-label{display:block;font-size:.8rem;color:var(--text-light);margin-bottom:3px}
-.btn{padding:10px 18px;border-radius:8px;border:none;cursor:pointer;font-weight:500;background:var(--blue);color:#fff}
-.btn-sm{padding:6px 12px;border-radius:6px;border:none;background:#f0f0f0;cursor:pointer;font-size:.85rem}
+.f-row-3>*{flex:1}
+.f-row-4>*{flex:1}
+.field-label{display:block;font-size:.78rem;color:var(--text-light);margin-bottom:2px}
+.btn{padding:10px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:500;background:var(--blue);color:#fff;font-size:.9rem}
+.btn-sm{padding:6px 10px;border-radius:6px;border:none;background:#f0f0f0;cursor:pointer;font-size:.8rem}
 .btn-danger{background:var(--red);color:#fff}
 .btn-green{background:var(--green);color:#fff}
-.btn-block{width:100%;margin-top:10px;padding:14px;font-size:1.05rem}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-block{width:100%;margin-top:8px;padding:13px;font-size:1rem}
 .btn-outline{background:#fff;color:var(--blue);border:1.5px solid var(--blue)}
-.info-tag{display:inline-block;padding:4px 10px;background:#f0f7ff;border-radius:12px;font-size:.85rem;margin:2px 4px}
-.hint{font-size:.8rem;color:var(--text-light);margin-top:4px}
+.info-tag{display:inline-block;padding:3px 8px;background:#f0f7ff;border-radius:10px;font-size:.8rem;margin:2px 3px}
+.hint{font-size:.75rem;color:var(--text-light);margin-top:3px}
 
 /* 列表 */
-.list{display:flex;flex-direction:column;gap:6px}
-.list-item{background:var(--card-bg);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);gap:8px}
+.list{display:flex;flex-direction:column;gap:5px}
+.list-item{background:var(--card-bg);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);gap:6px}
 .list-body{flex:1;min-width:0}
-.list-title{font-weight:600;font-size:1rem}
-.list-sub{font-size:.8rem;color:var(--text-light)}
-.list-act{display:flex;gap:4px;flex-shrink:0}
+.list-title{font-weight:600;font-size:.95rem}
+.list-sub{font-size:.75rem;color:var(--text-light)}
+.list-act{display:flex;gap:3px;flex-shrink:0}
 
-/* 商品项(新建订单) */
-.item-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 0;border-bottom:1px solid #f0f0f0}
-.item-info{flex:1;min-width:70px}
-.item-name{font-weight:600}
-.item-unit{font-size:.78rem;color:var(--text-light)}
-.item-qty{display:flex;align-items:center;gap:3px}
-.qty-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.qty-input{width:50px;text-align:center;padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:.9rem}
-.item-subtotal{font-weight:700;color:var(--red);min-width:55px;text-align:right;font-size:.95rem}
-.item-del{background:none;border:none;color:#ccc;font-size:1.1rem;cursor:pointer;padding:2px 6px}
+/* 商品项 */
+.item-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.item-info{flex:1;min-width:60px}
+.item-name{font-weight:600;font-size:.9rem}
+.item-unit{font-size:.7rem;color:var(--text-light)}
+.item-qty{display:flex;align-items:center;gap:2px}
+.qty-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.qty-input{width:46px;text-align:center;padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:.85rem}
+.item-subtotal{font-weight:700;color:var(--red);min-width:50px;text-align:right;font-size:.9rem}
+.item-del{background:none;border:none;color:#ccc;font-size:1rem;cursor:pointer;padding:2px 4px}
 
 /* 搜索 */
-.search-box{position:relative;margin:10px 0}
-.search-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.12);display:none}
-.search-item{padding:11px 14px;display:flex;justify-content:space-between;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.search-box{position:relative;margin:8px 0}
+.search-results{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:8px;max-height:180px;overflow-y:auto;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.12);display:none}
+.search-item{padding:10px 12px;display:flex;justify-content:space-between;border-bottom:1px solid #f0f0f0;cursor:pointer}
 .search-item:active{background:#f0f7ff}
-.search-item-name{font-weight:500}
-.search-item-price{color:var(--red);font-weight:600;font-size:.9rem}
-.search-empty{padding:14px;text-align:center;color:var(--text-light)}
+.search-item-name{font-weight:500;font-size:.9rem}
+.search-item-price{color:var(--red);font-weight:600;font-size:.85rem}
+.search-empty{padding:12px;text-align:center;color:var(--text-light);font-size:.85rem}
 
 /* 合计 */
-.total-bar{text-align:right;padding:12px 0;font-size:1.2rem;font-weight:700;color:var(--red);border-top:2px solid #f0f0f0;margin-top:8px}
+.total-bar{text-align:right;padding:10px 0;font-size:1.1rem;font-weight:700;color:var(--red);border-top:2px solid #f0f0f0;margin-top:6px}
 
 /* 弹窗 */
 .modal{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:200}
 .modal.show{display:flex}
 .modal-bg{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4)}
-.modal-box{position:relative;background:#fff;border-radius:var(--radius);padding:20px;width:90%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
-.modal-box h3{margin-bottom:12px}
-.modal-box input{margin-bottom:8px}
-.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.modal-box{position:relative;background:#fff;border-radius:var(--radius);padding:16px;width:92%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal-box h3{margin-bottom:10px;font-size:1rem}
+.modal-box input,.modal-box select{margin-bottom:6px}
+.modal-btns{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
+
+/* 进销存 */
+.month-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px}
+.month-nav button{font-size:1.2rem;background:#fff;border:1.5px solid var(--border);border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.month-nav .month-label{font-size:1.05rem;font-weight:700;min-width:100px;text-align:center}
+.school-tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:8px;padding-bottom:4px}
+.school-tab{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:.8rem;white-space:nowrap;cursor:pointer;font-weight:500}
+.school-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.inv-section{margin-bottom:8px}
+.inv-section-title{font-weight:700;font-size:.9rem;padding:6px 0;border-bottom:2px solid #eee;margin-bottom:4px}
+.inv-row{display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:.8rem;gap:4px}
+.inv-row .inv-date{width:72px;font-size:.75rem;color:var(--text-light)}
+.inv-row .inv-name{flex:1;font-weight:500}
+.inv-row .inv-spec{width:36px;color:var(--text-light);font-size:.72rem}
+.inv-row .inv-qty{width:40px;text-align:right}
+.inv-row .inv-unit{width:28px;text-align:center;color:var(--text-light)}
+.inv-row .inv-price{width:42px;text-align:right}
+.inv-row .inv-amount{width:52px;text-align:right;font-weight:600}
+.inv-summary{display:flex;justify-content:space-around;padding:10px;background:#f8f9fa;border-radius:8px;margin:8px 0;font-weight:600}
+.inv-summary .sum-item{text-align:center}
+.inv-summary .sum-val{font-size:1.15rem}
+.inv-summary .sum-label{font-size:.7rem;color:var(--text-light)}
+.inv-profit{color:var(--green)}
+.inv-loss{color:var(--red)}
 
 /* 订单详情 */
-.detail-table{width:100%;border-collapse:collapse;font-size:.85rem}
-.detail-table th,.detail-table td{padding:8px 6px;border-bottom:1px solid #eee;text-align:center}
-.detail-table th{background:#f8f9fa;font-weight:600;color:var(--text-light)}
+.detail-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.detail-table th,.detail-table td{padding:7px 4px;border-bottom:1px solid #eee;text-align:center}
+.detail-table th{background:#f8f9fa;font-weight:600;color:var(--text-light);font-size:.75rem}
 .t-right{text-align:right}
-.total-cell{font-size:1.05rem;font-weight:700;color:var(--red)}
-
-/* 订单列表 */
+.total-cell{font-size:1rem;font-weight:700;color:var(--red)}
 .order-card .list-body{cursor:pointer}
-.order-date-tag{font-size:.8rem;color:var(--text-light);margin-left:6px}
-.order-sum{font-weight:700;color:var(--red);margin-top:2px;font-size:.95rem}
+.order-date-tag{font-size:.75rem;color:var(--text-light);margin-left:4px}
+.order-sum{font-weight:700;color:var(--red);margin-top:1px;font-size:.9rem}
 
-/* 空状态 */
-.empty{text-align:center;padding:40px 20px;color:var(--text-light)}
-.empty-icon{font-size:48px;margin-bottom:8px}
+/* 空 */
+.empty{text-align:center;padding:30px 16px;color:var(--text-light);font-size:.85rem}
+.empty-icon{font-size:40px;margin-bottom:6px}
+
+/* 月份选择器 */
+.month-selector{display:flex;align-items:center;gap:6px}
+.month-input{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem}
 </style>
 </head>
 <body>
 <div class="app">
-    <!-- ====== 首页 ====== -->
+    <!-- ========== 首页 ========== -->
     <div class="page active" id="page-home">
-        <div class="home-header">
-            <div class="home-icon">🐟</div>
-            <h1>海产订单管理</h1>
-        </div>
+        <div class="home-header"><h1>🐟 食品订单管理</h1></div>
         <div class="home-buttons">
             <button class="btn-big btn-primary" onclick="showPage('order-new')">
-                <span class="btn-icon">📝</span>
-                <span class="btn-label">新建订单</span>
-                <span class="btn-hint">快速出单，生成Excel</span>
+                <span class="btn-icon">📝</span><span class="btn-label">新建订单</span><span class="btn-hint">给幼儿园出单，生成Excel</span>
             </button>
-            <button class="btn-big btn-primary" style="background:linear-gradient(135deg,#28a745,#1e7e34);box-shadow:0 4px 14px rgba(40,167,69,.35);color:#fff" onclick="showPage('orders')">
-                <span class="btn-icon">📋</span>
-                <span class="btn-label">订单记录</span>
-                <span class="btn-hint">查看历史订单</span>
+            <button class="btn-big" style="background:linear-gradient(135deg,#fd7e14,#e0690a);box-shadow:0 3px 12px rgba(253,126,20,.3);color:#fff" onclick="showPage('inv')">
+                <span class="btn-icon">📊</span><span class="btn-label">进销存明细</span><span class="btn-hint">按月记录进出货，生成汇总表</span>
+            </button>
+        </div>
+        <div class="home-sub">
+            <button class="btn-big" style="background:#fff;color:var(--text);border:2px solid var(--border);min-height:56px" onclick="showPage('orders')">
+                <span class="btn-icon">📋</span><span class="btn-label">订单记录</span>
+            </button>
+            <button class="btn-big" style="background:#fff;color:var(--text);border:2px solid var(--border);min-height:56px" onclick="showPage('customers')">
+                <span class="btn-icon">🏫</span><span class="btn-label">幼儿园</span>
+            </button>
+            <button class="btn-big" style="background:#fff;color:var(--text);border:2px solid var(--border);min-height:56px" onclick="showPage('products')">
+                <span class="btn-icon">📦</span><span class="btn-label">产品</span>
             </button>
         </div>
     </div>
 
-    <!-- ====== 新建订单 ====== -->
+    <!-- ========== 新建订单 ========== -->
     <div class="page" id="page-order-new">
         <div class="page-header"><h2>📝 新建订单</h2></div>
-
-        <!-- 选幼儿园 -->
         <div class="card">
             <div class="card-title">① 选择幼儿园</div>
-            <select id="orderCustomer" class="big-input" onchange="onCustomerChange()">
-                <option value="">— 请选择幼儿园 —</option>
-            </select>
-            <div id="customerInfo" style="margin-top:8px"></div>
-            <div class="hint" style="margin-top:6px"><a href="javascript:showPage('customers')">+ 添加幼儿园</a></div>
+            <select id="orderCustomer" class="big-input" onchange="onCustomerChange()"><option value="">— 请选择 —</option></select>
+            <div id="customerInfo" style="margin-top:6px"></div>
+            <div class="hint"><a href="javascript:showPage('customers')">+ 添加幼儿园</a></div>
         </div>
-
-        <!-- 日期 -->
         <div class="card">
             <div class="card-title">② 日期</div>
             <div class="f-row f-row-2">
                 <div><span class="field-label">订货日期</span><input type="date" id="orderDate" class="big-input"></div>
                 <div><span class="field-label">送货日期</span><input type="date" id="deliveryDate" class="big-input"></div>
             </div>
-            <div style="margin-top:8px"><span class="field-label">备注</span><input type="text" id="orderNote" class="big-input" placeholder="如：去内脏、分装、上午送"></div>
+            <div style="margin-top:6px"><span class="field-label">备注</span><input type="text" id="orderNote" class="big-input" placeholder="如：分装、上午送"></div>
         </div>
-
-        <!-- 商品 -->
         <div class="card">
             <div class="card-title">③ 商品清单</div>
             <div id="orderItems"><div class="empty">还没有添加商品，请搜索并选择</div></div>
             <div class="search-box">
-                <input type="text" id="productSearch" class="big-input" placeholder="🔍 搜产品（输入第一个字即可）" autocomplete="off"
-                       oninput="searchProducts()" onfocus="searchProducts()">
+                <input type="text" id="productSearch" class="big-input" placeholder="🔍 搜产品（输入第一个字即可）" autocomplete="off" oninput="searchProducts('order')" onfocus="searchProducts('order')">
                 <div class="search-results" id="searchResults"></div>
             </div>
             <div class="total-bar">合计：<span id="totalAmount">¥0.00</span></div>
         </div>
-
-        <button class="btn btn-block" onclick="generateOrder()" id="submitBtn" disabled style="opacity:.5">
-            📥 生成 Excel 订单
-        </button>
+        <button class="btn btn-block" onclick="generateOrder()" id="submitBtn" disabled style="opacity:.5">📥 生成 Excel 订单</button>
     </div>
 
-    <!-- ====== 订单记录 ====== -->
-    <div class="page" id="page-orders">
-        <div class="page-header"><h2>📋 订单记录</h2></div>
-        <div id="orderList"></div>
-    </div>
+    <!-- ========== 订单记录 ========== -->
+    <div class="page" id="page-orders"><div class="page-header"><h2>📋 订单记录</h2></div><div id="orderList"></div></div>
 
-    <!-- ====== 订单详情 ====== -->
+    <!-- ========== 订单详情 ========== -->
     <div class="page" id="page-order-detail">
-        <div class="page-header">
-            <button class="btn-sm btn-outline" onclick="showPage('orders')">← 返回</button>
-            <h2>📄 订单详情</h2>
-        </div>
+        <div class="page-header"><button class="btn-sm btn-outline" onclick="showPage('orders')">← 返回</button><h2>📄 订单详情</h2></div>
         <div id="orderDetail"></div>
     </div>
 
-    <!-- ====== 幼儿园管理 ====== -->
+    <!-- ========== 幼儿园管理 ========== -->
     <div class="page" id="page-customers">
         <div class="page-header"><h2>🏫 幼儿园管理</h2></div>
         <div class="card">
             <div class="card-title">添加幼儿园</div>
-            <input type="text" id="custName" placeholder="幼儿园名称 *" class="big-input" style="margin-bottom:8px">
-            <div class="f-row f-row-2">
-                <input type="text" id="custContact" placeholder="园长姓名">
-                <input type="tel" id="custPhone" placeholder="电话">
-            </div>
-            <input type="text" id="custAddress" placeholder="地址（选填）" style="margin-top:8px">
+            <input type="text" id="custName" placeholder="幼儿园名称 *" class="big-input" style="margin-bottom:6px">
+            <div class="f-row f-row-2"><input type="text" id="custContact" placeholder="园长姓名"><input type="tel" id="custPhone" placeholder="电话"></div>
+            <input type="text" id="custAddress" placeholder="地址（选填）" style="margin-top:6px">
             <button class="btn" style="margin-top:8px" onclick="saveCustomer()">添加</button>
         </div>
         <div class="list" id="customerList"></div>
     </div>
 
-    <!-- ====== 产品管理 ====== -->
+    <!-- ========== 产品管理 ========== -->
     <div class="page" id="page-products">
-        <div class="page-header"><h2>🦐 海产品管理</h2></div>
+        <div class="page-header"><h2>📦 产品管理</h2></div>
         <div class="card">
             <div class="card-title">添加产品</div>
-            <div class="f-row" style="gap:6px">
-                <input type="text" id="prodName" placeholder="产品名称 *" style="flex:2">
-                <input type="text" id="prodUnit" placeholder="单位" value="斤" style="flex:1">
-                <input type="number" id="prodPrice" placeholder="单价" step="0.01" style="flex:1">
-            </div>
+            <input type="text" id="prodName" placeholder="产品名称 *" style="margin-bottom:6px">
+            <div class="f-row f-row-3"><input type="text" id="prodSpec" placeholder="规格" style="flex:1"><input type="text" id="prodUnit" placeholder="单位" value="包" style="flex:0.8"><input type="number" id="prodSellPrice" placeholder="出货价" step="0.01" style="flex:1.2"></div>
+            <div style="margin-top:6px"><span class="field-label">进货价格</span><input type="number" id="prodBuyPrice" placeholder="进货价" step="0.01"></div>
             <button class="btn" style="margin-top:8px" onclick="saveProduct()">添加</button>
         </div>
         <div class="list" id="productList"></div>
+    </div>
+
+    <!-- ========== 进销存明细 ========== -->
+    <div class="page" id="page-inv">
+        <div class="page-header"><h2>📊 进销存明细表</h2></div>
+        <!-- 月份导航 -->
+        <div class="month-nav">
+            <button onclick="changeMonth(-1)">◀</button>
+            <input type="month" id="invMonth" class="month-input" onchange="refreshInvPage()">
+            <button onclick="changeMonth(1)">▶</button>
+        </div>
+        <!-- 学校Tab -->
+        <div class="school-tabs" id="schoolTabs"></div>
+        <!-- 汇总 -->
+        <div class="inv-summary" id="invSummary"></div>
+        <!-- 进货/出货明细 -->
+        <div id="invDetail"></div>
+        <!-- 添加记录 -->
+        <div class="card" style="margin-top:10px">
+            <div class="card-title">+ 添加记录</div>
+            <select id="invSchool" class="big-input" style="margin-bottom:6px"><option value="">选择学校</option></select>
+            <div class="f-row f-row-2" style="margin-bottom:6px">
+                <select id="invType" class="big-input"><option value="buy">进货</option><option value="sell">出货</option></select>
+                <input type="date" id="invDate" class="big-input">
+            </div>
+            <div class="search-box">
+                <input type="text" id="invSearch" class="big-input" placeholder="🔍 搜索产品" autocomplete="off" oninput="searchProducts('inv')" onfocus="searchProducts('inv')">
+                <div class="search-results" id="invSearchResults"></div>
+            </div>
+            <input type="hidden" id="invProdName">
+            <input type="hidden" id="invProdSpec">
+            <input type="hidden" id="invProdUnit">
+            <input type="hidden" id="invProdBuyPrice">
+            <input type="hidden" id="invProdSellPrice">
+            <div id="invProdInfo" style="display:none;padding:6px;background:#f0f7ff;border-radius:6px;margin:6px 0;font-size:.85rem"></div>
+            <div class="f-row" style="margin-top:6px"><input type="number" id="invQty" placeholder="数量" step="0.1" min="0.1" style="flex:1"><button class="btn btn-green" style="flex:1" onclick="addInvRecord()">添加记录</button></div>
+        </div>
+        <button class="btn btn-block btn-orange" onclick="generateInvExcel()">📥 生成进销存明细 Excel</button>
     </div>
 
     <!-- 底部导航 -->
     <div class="tab-bar">
         <button class="tab-btn active" onclick="showPage('home')"><span class="tab-icon">🏠</span>首页</button>
         <button class="tab-btn" onclick="showPage('order-new')"><span class="tab-icon">📝</span>出单</button>
-        <button class="tab-btn" onclick="showPage('orders')"><span class="tab-icon">📋</span>记录</button>
+        <button class="tab-btn" onclick="showPage('inv')"><span class="tab-icon">📊</span>进销存</button>
         <button class="tab-btn" onclick="showPage('customers')"><span class="tab-icon">🏫</span>幼儿园</button>
-        <button class="tab-btn" onclick="showPage('products')"><span class="tab-icon">🦐</span>产品</button>
+        <button class="tab-btn" onclick="showPage('products')"><span class="tab-icon">📦</span>产品</button>
     </div>
 </div>
 
 <!-- 编辑弹窗 -->
-<div class="modal" id="editModal">
-    <div class="modal-bg" onclick="closeModal()"></div>
-    <div class="modal-box" id="editModalContent"></div>
-</div>
+<div class="modal" id="editModal"><div class="modal-bg" onclick="closeModal()"></div><div class="modal-box" id="editModalContent"></div></div>
 
 <script>
 // ==================== 数据层 ====================
@@ -246,41 +292,98 @@ const DB = {
     set(k,v){ localStorage.setItem(k, JSON.stringify(v)) },
 };
 
-// 初始化预设数据
 function initData() {
-    if (!localStorage.getItem('seafood_inited')) {
-        DB.set('customers', []);
-        DB.set('products', [
-            {id:1, name:'带鱼', unit:'斤', price:15},
-            {id:2, name:'黄花鱼', unit:'斤', price:22},
-            {id:3, name:'鲅鱼', unit:'斤', price:18},
-            {id:4, name:'虾仁', unit:'斤', price:45},
-            {id:5, name:'海蛎', unit:'斤', price:18},
-            {id:6, name:'鱿鱼', unit:'斤', price:22},
-            {id:7, name:'扇贝', unit:'斤', price:28},
-            {id:8, name:'海带', unit:'斤', price:8},
-            {id:9, name:'紫菜', unit:'袋', price:15},
-            {id:10, name:'花蛤', unit:'斤', price:12},
-            {id:11, name:'海参', unit:'斤', price:120},
-            {id:12, name:'鲍鱼', unit:'斤', price:68},
-            {id:13, name:'小黄鱼', unit:'斤', price:16},
-            {id:14, name:'马鲛鱼', unit:'斤', price:20},
-            {id:15, name:'虾皮', unit:'斤', price:35},
-            {id:16, name:'海蜇', unit:'斤', price:25},
-            {id:17, name:'蛏子', unit:'斤', price:22},
-            {id:18, name:'螃蟹', unit:'斤', price:55},
-            {id:19, name:'巴浪鱼', unit:'斤', price:10},
-            {id:20, name:'鳗鱼', unit:'斤', price:30},
-        ]);
-        DB.set('orders', []);
-        DB.set('nextId', {customers:1, products:21, orders:1});
-        localStorage.setItem('seafood_inited', '1');
+    if (!localStorage.getItem('seafood_v2_inited')) {
+        let products = DB.get('products');
+        // 清空旧的单价格产品，如果有的话
+        if (products.length > 0 && products[0].price !== undefined) {
+            DB.set('products', []);
+        }
+        // 如果没有产品，导入预设
+        if (!DB.get('products').length) {
+            DB.set('products', [
+                {id:1,name:'安井煎饺',spec:'',unit:'包',buyPrice:11.00,sellPrice:19.50},
+                {id:2,name:'非转调和油',spec:'',unit:'件',buyPrice:185.00,sellPrice:215.00},
+                {id:3,name:'牛肉丸',spec:'',unit:'斤',buyPrice:6.50,sellPrice:10.00},
+                {id:4,name:'鸡翅中',spec:'',unit:'包',buyPrice:34.00,sellPrice:39.00},
+                {id:5,name:'玉米粒',spec:'',unit:'件',buyPrice:45.00,sellPrice:60.00},
+                {id:6,name:'玉米粒',spec:'',unit:'包',buyPrice:4.50,sellPrice:6.00},
+                {id:7,name:'雪花排条',spec:'',unit:'包',buyPrice:9.80,sellPrice:13.00},
+                {id:8,name:'蛋饺',spec:'',unit:'包',buyPrice:2.30,sellPrice:2.70},
+                {id:9,name:'火腿丁',spec:'',unit:'包',buyPrice:9.00,sellPrice:11.00},
+                {id:10,name:'台湾火腿肠',spec:'',unit:'包',buyPrice:16.70,sellPrice:24.00},
+                {id:11,name:'奶黄包',spec:'',unit:'包',buyPrice:5.20,sellPrice:6.00},
+                {id:12,name:'香芋条',spec:'',unit:'包',buyPrice:22.50,sellPrice:25.00},
+                {id:13,name:'鸟蛋',spec:'',unit:'件',buyPrice:105.00,sellPrice:120.00},
+                {id:14,name:'鸟蛋',spec:'',unit:'包',buyPrice:17.50,sellPrice:20.00},
+                {id:15,name:'烧卖',spec:'',unit:'件',buyPrice:78.00,sellPrice:110.00},
+                {id:16,name:'烧卖',spec:'',unit:'包',buyPrice:19.50,sellPrice:27.50},
+                {id:17,name:'非转调和油',spec:'',unit:'瓶',buyPrice:92.50,sellPrice:108.00},
+                {id:18,name:'安井虾饺',spec:'',unit:'包',buyPrice:28.75,sellPrice:35.00},
+                {id:19,name:'安井煎饺',spec:'',unit:'件',buyPrice:78.00,sellPrice:110.00},
+                {id:20,name:'卡滋脆鸡排',spec:'',unit:'包',buyPrice:12.80,sellPrice:16.00},
+                {id:21,name:'肉饼',spec:'',unit:'斤',buyPrice:6.50,sellPrice:12.00},
+                {id:22,name:'鸡米花',spec:'',unit:'包',buyPrice:10.50,sellPrice:13.00},
+                {id:23,name:'片片香',spec:'',unit:'包',buyPrice:23.80,sellPrice:30.00},
+                {id:24,name:'鸡块',spec:'',unit:'包',buyPrice:9.80,sellPrice:12.50},
+                {id:25,name:'荷花卷',spec:'',unit:'包',buyPrice:5.20,sellPrice:6.00},
+                {id:26,name:'大翅根',spec:'',unit:'包',buyPrice:11.00,sellPrice:13.00},
+                {id:27,name:'红豆卷',spec:'',unit:'包',buyPrice:5.20,sellPrice:6.00},
+                {id:28,name:'黑椒鸡扒',spec:'',unit:'包',buyPrice:17.50,sellPrice:23.00},
+                {id:29,name:'薯条',spec:'',unit:'包',buyPrice:14.20,sellPrice:25.00},
+                {id:30,name:'川香鸡柳',spec:'',unit:'包',buyPrice:12.00,sellPrice:15.00},
+                {id:31,name:'杂锦豆',spec:'',unit:'件',buyPrice:45.00,sellPrice:60.00},
+                {id:32,name:'四喜小汤圆',spec:'',unit:'包',buyPrice:9.50,sellPrice:12.00},
+                {id:33,name:'小酥肉',spec:'',unit:'包',buyPrice:8.50,sellPrice:12.50},
+            ]);
+        }
+        if (!DB.get('nextId').products) {
+            DB.set('nextId', {customers:1, products:34, orders:1});
+        }
+        localStorage.setItem('seafood_v2_inited', '1');
+    }
+    // 确保 products 有新字段
+    let products = DB.get('products');
+    let updated = false;
+    products.forEach(p => {
+        if (p.price !== undefined && p.buyPrice === undefined) {
+            p.sellPrice = p.price;
+            p.buyPrice = p.price;
+            delete p.price;
+            updated = true;
+        }
+        if (p.spec === undefined) { p.spec = ''; updated = true; }
+    });
+    if (updated) DB.set('products', products);
+}
+
+// 兼容旧数据
+function migrateOldData() {
+    if (localStorage.getItem('seafood_inited') && !localStorage.getItem('seafood_v2_migrated')) {
+        // 旧数据迁移：orders中的items可能有price字段
+        let orders = DB.get('orders');
+        let changed = false;
+        orders.forEach(o => {
+            o.items.forEach(it => {
+                if (it.price !== undefined && it.sellPrice === undefined) {
+                    it.sellPrice = it.price;
+                    it.buyPrice = it.price;
+                    delete it.price;
+                    changed = true;
+                }
+            });
+        });
+        if (changed) DB.set('orders', orders);
+        localStorage.setItem('seafood_v2_migrated', '1');
     }
 }
+
 initData();
+migrateOldData();
 
 function nextId(type) {
     const ids = DB.get('nextId');
+    if (!ids[type]) ids[type] = 1;
     const id = ids[type];
     ids[type] = id + 1;
     DB.set('nextId', ids);
@@ -288,164 +391,125 @@ function nextId(type) {
 }
 
 // ==================== 页面导航 ====================
-let currentPage = 'home';
 function showPage(name) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const page = document.getElementById('page-' + name);
     if (page) page.classList.add('active');
-    currentPage = name;
-    // 更新底部导航
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    const tabMap = {home:0, 'order-new':1, orders:2, customers:3, products:4};
+    const tabMap = {home:0, 'order-new':1, inv:2, customers:3, products:4};
     if (tabMap[name] !== undefined) document.querySelectorAll('.tab-btn')[tabMap[name]].classList.add('active');
-    // 刷新页面数据
     if (name === 'order-new') refreshOrderPage();
     if (name === 'orders') refreshOrderList();
+    if (name === 'order-detail') { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); }
     if (name === 'customers') refreshCustomerList();
     if (name === 'products') refreshProductList();
+    if (name === 'inv') refreshInvPage();
 }
 
 // ==================== 幼儿园管理 ====================
 function refreshCustomerList() {
     const list = document.getElementById('customerList');
     const customers = DB.get('customers');
-    if (!customers.length) {
-        list.innerHTML = '<div class="empty">还没有添加幼儿园</div>';
-        return;
-    }
+    if (!customers.length) { list.innerHTML = '<div class="empty">还没有添加幼儿园</div>'; return; }
     list.innerHTML = customers.map(c => `
-        <div class="list-item">
-            <div class="list-body">
-                <div class="list-title">${esc(c.name)}</div>
-                <div class="list-sub">${[c.contact&&'👤'+esc(c.contact),c.phone&&'📞'+esc(c.phone),c.address&&'📍'+esc(c.address)].filter(Boolean).join(' ')}</div>
-            </div>
-            <div class="list-act">
-                <button class="btn-sm" onclick="editCustomer(${c.id})">✏️</button>
-                <button class="btn-sm btn-danger" onclick="deleteCustomer(${c.id})">🗑️</button>
-            </div>
-        </div>`).join('');
+        <div class="list-item"><div class="list-body">
+            <div class="list-title">${esc(c.name)}</div>
+            <div class="list-sub">${[c.contact&&'👤'+esc(c.contact),c.phone&&'📞'+esc(c.phone),c.address&&'📍'+esc(c.address)].filter(Boolean).join(' ')}</div>
+        </div><div class="list-act">
+            <button class="btn-sm" onclick="editCustomer(${c.id})">✏️</button>
+            <button class="btn-sm btn-danger" onclick="deleteCustomer(${c.id})">🗑️</button>
+        </div></div>`).join('');
 }
 
 function saveCustomer() {
     const name = document.getElementById('custName').value.trim();
     if (!name) return alert('请输入幼儿园名称');
     const customers = DB.get('customers');
-    customers.push({
-        id: nextId('customers'),
-        name,
-        contact: document.getElementById('custContact').value.trim(),
-        phone: document.getElementById('custPhone').value.trim(),
-        address: document.getElementById('custAddress').value.trim()
-    });
+    customers.push({id: nextId('customers'), name, contact: document.getElementById('custContact').value.trim(), phone: document.getElementById('custPhone').value.trim(), address: document.getElementById('custAddress').value.trim()});
     DB.set('customers', customers);
-    document.getElementById('custName').value = '';
-    document.getElementById('custContact').value = '';
-    document.getElementById('custPhone').value = '';
-    document.getElementById('custAddress').value = '';
+    ['custName','custContact','custPhone','custAddress'].forEach(id => document.getElementById(id).value = '');
     refreshCustomerList();
 }
 
 function editCustomer(id) {
-    const customers = DB.get('customers');
-    const c = customers.find(x => x.id === id);
-    if (!c) return;
+    const c = DB.get('customers').find(x => x.id === id); if (!c) return;
     document.getElementById('editModalContent').innerHTML = `
         <h3>编辑幼儿园</h3>
-        <input type="text" id="editCustName" value="${esc(c.name)}" placeholder="名称 *">
-        <div class="f-row f-row-2">
-            <input type="text" id="editCustContact" value="${esc(c.contact||'')}" placeholder="园长">
-            <input type="tel" id="editCustPhone" value="${esc(c.phone||'')}" placeholder="电话">
-        </div>
-        <input type="text" id="editCustAddress" value="${esc(c.address||'')}" placeholder="地址">
-        <div class="modal-btns">
-            <button class="btn-sm" onclick="closeModal()">取消</button>
-            <button class="btn-sm btn" onclick="updateCustomer(${id})">保存</button>
-        </div>`;
+        <input type="text" id="ecName" value="${esc(c.name)}" placeholder="名称">
+        <div class="f-row f-row-2"><input type="text" id="ecContact" value="${esc(c.contact||'')}" placeholder="园长"><input type="tel" id="ecPhone" value="${esc(c.phone||'')}" placeholder="电话"></div>
+        <input type="text" id="ecAddress" value="${esc(c.address||'')}" placeholder="地址">
+        <div class="modal-btns"><button class="btn-sm" onclick="closeModal()">取消</button><button class="btn-sm btn" onclick="updateCustomer(${id})">保存</button></div>`;
     document.getElementById('editModal').classList.add('show');
 }
 
 function updateCustomer(id) {
-    const customers = DB.get('customers');
-    const c = customers.find(x => x.id === id);
-    if (!c) return;
-    c.name = document.getElementById('editCustName').value.trim();
-    c.contact = document.getElementById('editCustContact').value.trim();
-    c.phone = document.getElementById('editCustPhone').value.trim();
-    c.address = document.getElementById('editCustAddress').value.trim();
-    DB.set('customers', customers);
-    closeModal();
-    refreshCustomerList();
+    const c = DB.get('customers').find(x => x.id === id); if (!c) return;
+    c.name = document.getElementById('ecName').value.trim();
+    c.contact = document.getElementById('ecContact').value.trim();
+    c.phone = document.getElementById('ecPhone').value.trim();
+    c.address = document.getElementById('ecAddress').value.trim();
+    DB.set('customers', DB.get('customers'));
+    closeModal(); refreshCustomerList();
 }
 
 function deleteCustomer(id) {
     if (!confirm('确定删除这个幼儿园吗？')) return;
-    const customers = DB.get('customers').filter(c => c.id !== id);
-    DB.set('customers', customers);
+    DB.set('customers', DB.get('customers').filter(c => c.id !== id));
     refreshCustomerList();
 }
 
 // ==================== 产品管理 ====================
 function refreshProductList() {
-    const list = document.getElementById('productList');
     const products = DB.get('products');
-    if (!products.length) {
-        list.innerHTML = '<div class="empty">还没有添加产品</div>';
-        return;
-    }
+    const list = document.getElementById('productList');
+    if (!products.length) { list.innerHTML = '<div class="empty">还没有添加产品</div>'; return; }
     list.innerHTML = products.map(p => `
-        <div class="list-item">
-            <div class="list-body">
-                <div class="list-title">${esc(p.name)}</div>
-                <div class="list-sub">${esc(p.unit)} / ¥${p.price.toFixed(2)}</div>
-            </div>
-            <div class="list-act">
-                <button class="btn-sm" onclick="editProduct(${p.id})">✏️</button>
-                <button class="btn-sm btn-danger" onclick="deleteProduct(${p.id})">🗑️</button>
-            </div>
-        </div>`).join('');
+        <div class="list-item"><div class="list-body">
+            <div class="list-title">${esc(p.name)} ${p.spec?esc(p.spec):''} <span style="font-size:.75rem;color:var(--text-light)">${esc(p.unit)}</span></div>
+            <div class="list-sub">进 ¥${p.buyPrice.toFixed(2)} → 出 ¥${p.sellPrice.toFixed(2)} | 利 ¥${(p.sellPrice-p.buyPrice).toFixed(2)}</div>
+        </div><div class="list-act">
+            <button class="btn-sm" onclick="editProduct(${p.id})">✏️</button>
+            <button class="btn-sm btn-danger" onclick="deleteProduct(${p.id})">🗑️</button>
+        </div></div>`).join('');
 }
 
 function saveProduct() {
     const name = document.getElementById('prodName').value.trim();
     if (!name) return alert('请输入产品名称');
-    const unit = document.getElementById('prodUnit').value.trim() || '斤';
-    const price = parseFloat(document.getElementById('prodPrice').value) || 0;
     const products = DB.get('products');
-    products.push({id: nextId('products'), name, unit, price});
+    products.push({
+        id: nextId('products'), name,
+        spec: document.getElementById('prodSpec').value.trim(),
+        unit: document.getElementById('prodUnit').value.trim() || '包',
+        buyPrice: parseFloat(document.getElementById('prodBuyPrice').value) || 0,
+        sellPrice: parseFloat(document.getElementById('prodSellPrice').value) || 0,
+    });
     DB.set('products', products);
-    document.getElementById('prodName').value = '';
-    document.getElementById('prodPrice').value = '';
+    ['prodName','prodSpec','prodUnit','prodBuyPrice','prodSellPrice'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('prodUnit').value = '包';
     refreshProductList();
 }
 
 function editProduct(id) {
-    const products = DB.get('products');
-    const p = products.find(x => x.id === id);
-    if (!p) return;
+    const p = DB.get('products').find(x => x.id === id); if (!p) return;
     document.getElementById('editModalContent').innerHTML = `
         <h3>编辑产品</h3>
-        <input type="text" id="editProdName" value="${esc(p.name)}" placeholder="名称 *">
-        <div class="f-row f-row-2">
-            <input type="text" id="editProdUnit" value="${esc(p.unit)}" placeholder="单位">
-            <input type="number" id="editProdPrice" value="${p.price}" placeholder="单价" step="0.01">
-        </div>
-        <div class="modal-btns">
-            <button class="btn-sm" onclick="closeModal()">取消</button>
-            <button class="btn-sm btn" onclick="updateProduct(${id})">保存</button>
-        </div>`;
+        <input type="text" id="epName" value="${esc(p.name)}" placeholder="名称">
+        <div class="f-row f-row-2"><input type="text" id="epSpec" value="${esc(p.spec||'')}" placeholder="规格"><input type="text" id="epUnit" value="${esc(p.unit)}" placeholder="单位"></div>
+        <div class="f-row f-row-2"><input type="number" id="epBuyPrice" value="${p.buyPrice}" placeholder="进货价" step="0.01"><input type="number" id="epSellPrice" value="${p.sellPrice}" placeholder="出货价" step="0.01"></div>
+        <div class="modal-btns"><button class="btn-sm" onclick="closeModal()">取消</button><button class="btn-sm btn" onclick="updateProduct(${id})">保存</button></div>`;
     document.getElementById('editModal').classList.add('show');
 }
 
 function updateProduct(id) {
-    const products = DB.get('products');
-    const p = products.find(x => x.id === id);
-    if (!p) return;
-    p.name = document.getElementById('editProdName').value.trim();
-    p.unit = document.getElementById('editProdUnit').value.trim() || '斤';
-    p.price = parseFloat(document.getElementById('editProdPrice').value) || 0;
-    DB.set('products', products);
-    closeModal();
-    refreshProductList();
+    const p = DB.get('products').find(x => x.id === id); if (!p) return;
+    p.name = document.getElementById('epName').value.trim();
+    p.spec = document.getElementById('epSpec').value.trim();
+    p.unit = document.getElementById('epUnit').value.trim() || '包';
+    p.buyPrice = parseFloat(document.getElementById('epBuyPrice').value) || 0;
+    p.sellPrice = parseFloat(document.getElementById('epSellPrice').value) || 0;
+    DB.set('products', DB.get('products'));
+    closeModal(); refreshProductList();
 }
 
 function deleteProduct(id) {
@@ -454,103 +518,73 @@ function deleteProduct(id) {
     refreshProductList();
 }
 
-function closeModal() {
-    document.getElementById('editModal').classList.remove('show');
-}
+function closeModal() { document.getElementById('editModal').classList.remove('show'); }
 
 // ==================== 新建订单 ====================
 let orderItems = [];
 
 function refreshOrderPage() {
-    // 填充幼儿园下拉
     const sel = document.getElementById('orderCustomer');
     const customers = DB.get('customers');
-    sel.innerHTML = '<option value="">— 请选择幼儿园 —</option>' +
-        customers.map(c => `<option value="${c.id}" data-contact="${esc(c.contact||'')}" data-phone="${esc(c.phone||'')}">${esc(c.name)}</option>`).join('');
-    // 默认日期
+    sel.innerHTML = '<option value="">— 请选择幼儿园 —</option>' + customers.map(c => `<option value="${c.id}" data-contact="${esc(c.contact||'')}" data-phone="${esc(c.phone||'')}">${esc(c.name)}</option>`).join('');
     const today = new Date().toISOString().split('T')[0];
-    const d2 = new Date(Date.now() + 2*86400000).toISOString().split('T')[0];
     document.getElementById('orderDate').value = today;
-    document.getElementById('deliveryDate').value = d2;
+    document.getElementById('deliveryDate').value = new Date(Date.now()+2*86400000).toISOString().split('T')[0];
     document.getElementById('orderNote').value = '';
     document.getElementById('customerInfo').innerHTML = '';
     orderItems = [];
     renderOrderItems();
-    document.getElementById('productSearch').value = '';
-    document.getElementById('searchResults').style.display = 'none';
 }
 
 function onCustomerChange() {
-    const sel = document.getElementById('orderCustomer');
-    const opt = sel.options[sel.selectedIndex];
+    const opt = document.getElementById('orderCustomer').selectedOptions[0];
     const div = document.getElementById('customerInfo');
-    if (sel.value && opt) {
-        div.innerHTML = `<span class="info-tag">👤 ${esc(opt.dataset.contact||'未填写')}</span>
-                         <span class="info-tag">📞 ${esc(opt.dataset.phone||'未填写')}</span>`;
-    } else {
-        div.innerHTML = '';
-    }
+    if (opt && opt.value) {
+        div.innerHTML = `<span class="info-tag">👤 ${esc(opt.dataset.contact||'未填写')}</span><span class="info-tag">📞 ${esc(opt.dataset.phone||'未填写')}</span>`;
+    } else { div.innerHTML = ''; }
     checkSubmit();
 }
 
-function searchProducts() {
-    const q = document.getElementById('productSearch').value.trim().toLowerCase();
+function searchProducts(source) {
+    const searchInput = source === 'inv' ? document.getElementById('invSearch') : document.getElementById('productSearch');
+    const resultsDiv = source === 'inv' ? document.getElementById('invSearchResults') : document.getElementById('searchResults');
+    const q = searchInput.value.trim().toLowerCase();
     const all = DB.get('products');
-    const addedNames = new Set(orderItems.map(i => i.name));
     let results;
-    if (!q) {
-        results = all.filter(p => !addedNames.has(p.name));
-    } else {
-        results = all.filter(p =>
-            (p.name.includes(q) || p.name.startsWith(q) || p.name.charAt(0) === q.charAt(0))
-            && !addedNames.has(p.name)
-        );
-    }
-    const div = document.getElementById('searchResults');
+    if (!q) { results = all; }
+    else { results = all.filter(p => p.name.includes(q) || p.name.startsWith(q) || p.name.charAt(0) === q.charAt(0)); }
     if (!results.length) {
-        div.innerHTML = '<div class="search-empty">' + (q ? '没有匹配的产品' : '所有产品已添加') + '</div>';
+        resultsDiv.innerHTML = '<div class="search-empty">没有匹配的产品</div>';
     } else {
-        div.innerHTML = results.map(p => `
-            <div class="search-item" onclick="addOrderItem(${p.id},'${esc(p.name)}','${esc(p.unit)}',${p.price})">
-                <span class="search-item-name">${esc(p.name)}</span>
-                <span class="search-item-price">¥${p.price.toFixed(2)}/${esc(p.unit)}</span>
+        resultsDiv.innerHTML = results.map(p => `
+            <div class="search-item" onclick="${source==='inv'?'selectInvProduct':'selectOrderProduct'}(${p.id})">
+                <span class="search-item-name">${esc(p.name)} ${p.spec?esc(p.spec):''}</span>
+                <span class="search-item-price">¥${p.sellPrice.toFixed(2)}/${esc(p.unit)}</span>
             </div>`).join('');
     }
-    div.style.display = 'block';
+    resultsDiv.style.display = 'block';
 }
 
-function addOrderItem(id, name, unit, price) {
-    orderItems.push({id, name, unit, price, quantity: 1});
+function selectOrderProduct(pid) {
+    const p = DB.get('products').find(x => x.id === pid); if (!p) return;
+    orderItems.push({id: p.id, name: p.name, spec: p.spec, unit: p.unit, sellPrice: p.sellPrice, buyPrice: p.buyPrice, quantity: 1});
     renderOrderItems();
     document.getElementById('productSearch').value = '';
     document.getElementById('searchResults').style.display = 'none';
     checkSubmit();
 }
 
-function removeOrderItem(idx) {
-    orderItems.splice(idx, 1);
-    renderOrderItems();
-    checkSubmit();
-}
-
-function updateQty(idx, qty) {
-    orderItems[idx].quantity = Math.max(0.1, parseFloat(qty) || 0.1);
-    renderOrderItems();
-}
+function removeOrderItem(idx) { orderItems.splice(idx, 1); renderOrderItems(); checkSubmit(); }
+function updateQty(idx, qty) { orderItems[idx].quantity = Math.max(0.1, parseFloat(qty) || 0.1); renderOrderItems(); }
 
 function renderOrderItems() {
     const div = document.getElementById('orderItems');
-    if (!orderItems.length) {
-        div.innerHTML = '<div class="empty">还没有添加商品，请搜索并选择</div>';
-        document.getElementById('totalAmount').textContent = '¥0.00';
-        return;
-    }
+    if (!orderItems.length) { div.innerHTML = '<div class="empty">还没有添加商品，请搜索并选择</div>'; document.getElementById('totalAmount').textContent = '¥0.00'; return; }
     let total = 0;
     div.innerHTML = orderItems.map((item, i) => {
-        const sub = item.price * item.quantity;
-        total += sub;
+        const sub = item.sellPrice * item.quantity; total += sub;
         return `<div class="item-row">
-            <div class="item-info"><div class="item-name">${esc(item.name)}</div><div class="item-unit">${esc(item.unit)} / ¥${item.price.toFixed(2)}</div></div>
+            <div class="item-info"><div class="item-name">${esc(item.name)} ${item.spec?esc(item.spec):''}</div><div class="item-unit">${esc(item.unit)} / 出¥${item.sellPrice.toFixed(2)}</div></div>
             <div class="item-qty">
                 <button type="button" class="qty-btn" onclick="updateQty(${i},${item.quantity - 1})">−</button>
                 <input type="number" class="qty-input" value="${item.quantity}" min="0.1" step="0.1" onchange="updateQty(${i},this.value)">
@@ -566,184 +600,336 @@ function renderOrderItems() {
 function checkSubmit() {
     const btn = document.getElementById('submitBtn');
     const ok = document.getElementById('orderCustomer').value && orderItems.length > 0;
-    btn.disabled = !ok;
-    btn.style.opacity = ok ? '1' : '.5';
+    btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5';
 }
 
 // ==================== 生成订单 Excel ====================
 function generateOrder() {
     const customerId = parseInt(document.getElementById('orderCustomer').value);
-    const customers = DB.get('customers');
-    const customer = customers.find(c => c.id === customerId);
+    const customer = DB.get('customers').find(c => c.id === customerId);
     if (!customer) return alert('请选择幼儿园');
     if (!orderItems.length) return alert('请添加商品');
 
     const orderDate = document.getElementById('orderDate').value;
     const deliveryDate = document.getElementById('deliveryDate').value;
     const note = document.getElementById('orderNote').value.trim();
-    const total = orderItems.reduce((s, i) => s + i.price * i.quantity, 0);
+    const total = orderItems.reduce((s, i) => s + i.sellPrice * i.quantity, 0);
 
-    // 保存到数据库
     const order = {
-        id: nextId('orders'),
-        customerName: customer.name,
-        customerContact: customer.contact,
-        customerPhone: customer.phone,
-        orderDate, deliveryDate, note, total,
-        items: orderItems.map(i => ({...i})),
-        createdAt: new Date().toISOString()
+        id: nextId('orders'), customerName: customer.name, customerContact: customer.contact,
+        customerPhone: customer.phone, orderDate, deliveryDate, note, total,
+        items: orderItems.map(i => ({...i})), createdAt: new Date().toISOString()
     };
-    const orders = DB.get('orders');
-    orders.unshift(order);
-    DB.set('orders', orders);
+    const orders = DB.get('orders'); orders.unshift(order); DB.set('orders', orders);
 
-    // 生成 Excel
-    downloadExcel(order);
-
-    // 回到首页
-    alert('✅ 订单已生成，Excel 正在下载！');
-    showPage('home');
-}
-
-function downloadExcel(order) {
-    // 构建 Excel 数据
+    // Build Excel
     const rows = [
-        ['海 产 订 货 单', '', '', '', '', ''],
-        ['收货单位：' + order.customerName, '', '', '', '', ''],
-        ['订货日期：' + order.orderDate, '', '送货日期：' + (order.deliveryDate||''), '', '', ''],
-        ['', '', '', '', '', ''],
-        ['序号', '品名', '单位', '数量', '单价(元)', '金额(元)'],
+        ['订  货  单', '', '', '', '', '', ''],
+        ['收货单位：' + order.customerName, '', '', '', '', '', ''],
+        ['订货日期：' + order.orderDate, '', '送货日期：' + (order.deliveryDate||''), '', '', '', ''],
+        ['联系人：' + (order.customerContact||''), '', '电话：' + (order.customerPhone||''), '', '', '', ''],
+        ['', '', '', '', '', '', ''],
+        ['序号', '商品名称', '规格', '单位', '数量', '单价(元)', '金额(元)'],
     ];
     order.items.forEach((it, i) => {
-        rows.push([i+1, it.name, it.unit, it.quantity, it.price, +(it.price * it.quantity).toFixed(2)]);
+        rows.push([i+1, it.name, it.spec||'', it.unit, it.quantity, it.sellPrice, +(it.sellPrice * it.quantity).toFixed(2)]);
     });
-    rows.push(['合  计', '', '', '', '', +order.total.toFixed(2)]);
-    rows.push(['', '', '', '', '', '']);
-    rows.push(['备注：' + (order.note||''), '', '', '', '', '']);
+    rows.push(['', '', '', '', '', '合计：', +total.toFixed(2)]);
+    rows.push(['', '', '', '', '', '', '']);
+    rows.push(['备注：' + (order.note||''), '', '', '', '', '', '']);
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
-
-    // 设置列宽
-    ws['!cols'] = [
-        {wch: 6}, {wch: 16}, {wch: 8}, {wch: 10}, {wch: 10}, {wch: 12}
-    ];
-
-    // 合并单元格
+    ws['!cols'] = [{wch:5},{wch:16},{wch:8},{wch:6},{wch:8},{wch:10},{wch:10}];
     ws['!merges'] = [
-        {s:{r:0,c:0}, e:{r:0,c:5}},
-        {s:{r:1,c:0}, e:{r:1,c:5}},
-        {s:{r:2,c:0}, e:{r:2,c:1}},
-        {s:{r:2,c:2}, e:{r:2,c:5}},
-        {s:{r:rows.length-2,c:0}, e:{r:rows.length-2,c:4}},
-        {s:{r:rows.length-1,c:0}, e:{r:rows.length-1,c:5}},
+        {s:{r:0,c:0},e:{r:0,c:6}}, {s:{r:1,c:0},e:{r:1,c:6}},
+        {s:{r:2,c:0},e:{r:2,c:1}}, {s:{r:2,c:2},e:{r:2,c:6}},
+        {s:{r:3,c:0},e:{r:3,c:1}}, {s:{r:3,c:2},e:{r:3,c:6}},
+        {s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:5}},
+        {s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:6}},
     ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '订货单');
+    XLSX.writeFile(wb, `订货单_${order.customerName}_${order.orderDate}.xlsx`);
 
+    alert('✅ 订单已生成！');
+}
+
+// ==================== 订单记录 ====================
+function refreshOrderList() {
+    const orders = DB.get('orders');
+    const div = document.getElementById('orderList');
+    if (!orders.length) { div.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>还没有订单</p><button class="btn" onclick="showPage(\'order-new\')">去创建</button></div>'; return; }
+    div.innerHTML = orders.map(o => `
+        <div class="list-item order-card">
+            <div class="list-body" onclick="viewOrder(${o.id})">
+                <div class="list-title">${esc(o.customerName)}<span class="order-date-tag">${o.orderDate}</span></div>
+                <div class="list-sub">${o.deliveryDate?'🚚'+o.deliveryDate+' · ':''}${o.items.length}种${o.note?' · 💬'+esc(o.note):''}</div>
+                <div class="order-sum">¥${o.total.toFixed(2)}</div>
+            </div>
+            <div class="list-act"><button class="btn-sm btn-green" onclick="event.stopPropagation();downloadOrderExcel(${o.id})">📥</button></div>
+        </div>`).join('');
+}
+
+function viewOrder(id) {
+    const order = DB.get('orders').find(o => o.id === id); if (!order) return;
+    document.getElementById('orderDetail').innerHTML = `
+        <div class="card"><div style="font-size:1.1rem;font-weight:700">${esc(order.customerName)}</div>
+            <div style="font-size:.85rem;color:var(--text-light)">📅 ${order.orderDate} ${order.deliveryDate?'🚚 '+order.deliveryDate:''}</div>
+            ${order.note?`<div style="font-size:.85rem;color:var(--text-light)">💬 ${esc(order.note)}</div>`:''}</div>
+        <div class="card"><div class="card-title">商品明细</div>
+            <table class="detail-table"><thead><tr><th>品名</th><th>规格</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th></tr></thead>
+            <tbody>${order.items.map(it => `<tr><td>${esc(it.name)}</td><td>${it.spec||''}</td><td>${esc(it.unit)}</td><td>${it.quantity}</td><td>¥${it.sellPrice.toFixed(2)}</td><td class="t-right">¥${(it.sellPrice*it.quantity).toFixed(2)}</td></tr>`).join('')}</tbody>
+            <tfoot><tr><td colspan="5" class="t-right"><strong>合计</strong></td><td class="t-right total-cell">¥${order.total.toFixed(2)}</td></tr></tfoot></table></div>
+        <button class="btn btn-block" onclick="downloadOrderExcel(${order.id})">📥 下载 Excel</button>`;
+    showPage('order-detail');
+}
+
+function downloadOrderExcel(id) {
+    const order = DB.get('orders').find(o => o.id === id); if (!order) return;
+    const rows = [
+        ['订  货  单', '', '', '', '', '', ''],
+        ['收货单位：' + order.customerName, '', '', '', '', '', ''],
+        ['订货日期：' + order.orderDate, '', '送货日期：' + (order.deliveryDate||''), '', '', '', ''],
+        ['联系人：' + (order.customerContact||''), '', '电话：' + (order.customerPhone||''), '', '', '', ''],
+        ['', '', '', '', '', '', ''],
+        ['序号', '商品名称', '规格', '单位', '数量', '单价(元)', '金额(元)'],
+    ];
+    order.items.forEach((it, i) => {
+        rows.push([i+1, it.name, it.spec||'', it.unit, it.quantity, it.sellPrice, +(it.sellPrice * it.quantity).toFixed(2)]);
+    });
+    let total = order.items.reduce((s,it) => s + it.sellPrice*it.quantity, 0);
+    rows.push(['', '', '', '', '', '合计：', +total.toFixed(2)]);
+    rows.push(['', '', '', '', '', '', '']);
+    rows.push(['备注：' + (order.note||''), '', '', '', '', '', '']);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:5},{wch:16},{wch:8},{wch:6},{wch:8},{wch:10},{wch:10}];
+    ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}},{s:{r:2,c:0},e:{r:2,c:1}},{s:{r:2,c:2},e:{r:2,c:6}},{s:{r:3,c:0},e:{r:3,c:1}},{s:{r:3,c:2},e:{r:3,c:6}},{s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:5}},{s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:6}}];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '订货单');
     XLSX.writeFile(wb, `订货单_${order.customerName}_${order.orderDate}.xlsx`);
 }
 
-// ==================== 订单记录 ====================
-function refreshOrderList() {
-    const div = document.getElementById('orderList');
-    const orders = DB.get('orders');
-    if (!orders.length) {
-        div.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>还没有订单记录</p><button class="btn" onclick="showPage(\'order-new\')">去创建第一笔订单</button></div>';
-        return;
-    }
-    div.innerHTML = orders.map(o => `
-        <div class="list-item order-card">
-            <div class="list-body" onclick="viewOrder(${o.id})">
-                <div class="list-title">${esc(o.customerName)}<span class="order-date-tag">${o.orderDate}</span></div>
-                <div class="list-sub">${o.deliveryDate?'🚚'+o.deliveryDate+' · ':''}${o.items.length}种商品${o.note?' · 💬'+esc(o.note):''}</div>
-                <div class="order-sum">合计：¥${o.total.toFixed(2)}</div>
-            </div>
-            <div class="list-act">
-                <button class="btn-sm btn-green" onclick="event.stopPropagation();downloadExcel(${o.id})">📥</button>
-            </div>
-        </div>`).join('');
+// ==================== 进销存明细 ====================
+function refreshInvPage() {
+    const now = new Date();
+    const monthInput = document.getElementById('invMonth');
+    if (!monthInput.value) monthInput.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+    const [year, month] = monthInput.value.split('-');
+    const monthKey = year + '-' + month;
+    const allRecords = DB.get('invRecords') || [];
+    const records = allRecords.filter(r => r.monthKey === monthKey);
+
+    // 学校tabs
+    const schools = [...new Set(records.map(r => r.schoolName))];
+    let activeSchool = schools[0] || '';
+    const tabsDiv = document.getElementById('schoolTabs');
+    tabsDiv.innerHTML = schools.map(s => `<span class="school-tab active" data-school="${esc(s)}" onclick="filterInvSchool('${esc(s)}')">${esc(s)}</span>`).join('');
+    if (!schools.length) tabsDiv.innerHTML = '<span style="font-size:.85rem;color:var(--text-light)">暂无记录</span>';
+
+    // 更新学校下拉
+    const customers = DB.get('customers');
+    document.getElementById('invSchool').innerHTML = '<option value="">选择学校</option>' + customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    document.getElementById('invDate').value = now.toISOString().split('T')[0];
+
+    // 默认选中第一个学校
+    renderInvDetail(records, activeSchool);
+
+    // 汇总
+    let totalBuy = 0, totalSell = 0;
+    records.forEach(r => { if (r.type === 'buy') totalBuy += r.amount; else totalSell += r.amount; });
+    const profit = totalSell - totalBuy;
+    document.getElementById('invSummary').innerHTML = `
+        <div class="sum-item"><div class="sum-val" style="color:var(--red)">¥${totalBuy.toFixed(2)}</div><div class="sum-label">进货总额</div></div>
+        <div class="sum-item"><div class="sum-val" style="color:var(--green)">¥${totalSell.toFixed(2)}</div><div class="sum-label">出货总额</div></div>
+        <div class="sum-item"><div class="sum-val" style="color:${profit>=0?'var(--green)':'var(--red)'}">¥${profit.toFixed(2)}</div><div class="sum-label">收益</div></div>`;
 }
 
-function viewOrder(id) {
-    const orders = DB.get('orders');
-    const order = orders.find(o => o.id === id);
-    if (!order) return;
-
-    let html = `
-        <div class="card">
-            <div style="font-size:1.15rem;font-weight:700;margin-bottom:8px">${esc(order.customerName)}</div>
-            <div style="font-size:.9rem;color:var(--text-light)">📅 订货：${order.orderDate}${order.deliveryDate?'　🚚 送货：'+order.deliveryDate:''}</div>
-            ${order.note?`<div style="font-size:.9rem;color:var(--text-light)">💬 备注：${esc(order.note)}</div>`:''}
-        </div>
-        <div class="card">
-            <div class="card-title">商品明细</div>
-            <table class="detail-table">
-                <thead><tr><th>品名</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th></tr></thead>
-                <tbody>${order.items.map(it => `
-                    <tr><td>${esc(it.name)}</td><td>${esc(it.unit)}</td><td>${it.quantity}</td><td>¥${it.price.toFixed(2)}</td><td class="t-right">¥${(it.price*it.quantity).toFixed(2)}</td></tr>
-                `).join('')}</tbody>
-                <tfoot><tr><td colspan="4" class="t-right"><strong>合计</strong></td><td class="t-right total-cell">¥${order.total.toFixed(2)}</td></tr></tfoot>
-            </table>
-        </div>
-        <button class="btn btn-block" onclick="downloadExcel(${order.id})">📥 下载 Excel 订单</button>
-    `;
-    document.getElementById('orderDetail').innerHTML = html;
-    showPage('order-detail');
+function filterInvSchool(schoolName) {
+    const monthKey = document.getElementById('invMonth').value;
+    const records = (DB.get('invRecords')||[]).filter(r => r.monthKey === monthKey);
+    // 更新tabs高亮
+    document.querySelectorAll('#schoolTabs .school-tab').forEach(t => t.classList.toggle('active', t.dataset.school === schoolName));
+    renderInvDetail(records, schoolName);
 }
 
-// 重载 downloadExcel 支持通过 order id 下载
-const _origDownload = downloadExcel;
-downloadExcel = function(arg) {
-    if (typeof arg === 'number') {
-        const orders = DB.get('orders');
-        const order = orders.find(o => o.id === arg);
-        if (!order) return;
-        // 直接调用原始逻辑
-        const rows = [
-            ['海 产 订 货 单', '', '', '', '', ''],
-            ['收货单位：' + order.customerName, '', '', '', '', ''],
-            ['订货日期：' + order.orderDate, '', '送货日期：' + (order.deliveryDate||''), '', '', ''],
-            ['', '', '', '', '', ''],
-            ['序号', '品名', '单位', '数量', '单价(元)', '金额(元)'],
-        ];
-        order.items.forEach((it, i) => {
-            rows.push([i+1, it.name, it.unit, it.quantity, it.price, +(it.price * it.quantity).toFixed(2)]);
-        });
-        rows.push(['合  计', '', '', '', '', +order.total.toFixed(2)]);
-        rows.push(['', '', '', '', '', '']);
-        rows.push(['备注：' + (order.note||''), '', '', '', '', '']);
+function renderInvDetail(records, schoolName) {
+    const div = document.getElementById('invDetail');
+    const schoolRecords = records.filter(r => r.schoolName === schoolName);
+    if (!schoolRecords.length) { div.innerHTML = '<div class="empty">该学校本月暂无记录</div>'; return; }
 
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        ws['!cols'] = [{wch:6},{wch:16},{wch:8},{wch:10},{wch:10},{wch:12}];
-        ws['!merges'] = [
-            {s:{r:0,c:0},e:{r:0,c:5}},{s:{r:1,c:0},e:{r:1,c:5}},
-            {s:{r:2,c:0},e:{r:2,c:1}},{s:{r:2,c:2},e:{r:2,c:5}},
-            {s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:4}},{s:{r:rows.length-1,c:0},e:{r:rows.length-1,c:5}},
-        ];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, '订货单');
-        XLSX.writeFile(wb, `订货单_${order.customerName}_${order.orderDate}.xlsx`);
-    } else {
-        _origDownload(arg);
-    }
-};
+    const buyRecords = schoolRecords.filter(r => r.type === 'buy');
+    const sellRecords = schoolRecords.filter(r => r.type === 'sell');
+    const buyTotal = buyRecords.reduce((s,r) => s + r.amount, 0);
+    const sellTotal = sellRecords.reduce((s,r) => s + r.amount, 0);
+    const profit = sellTotal - buyTotal;
+
+    let html = `<div style="font-weight:700;font-size:.95rem;margin-bottom:4px">📋 ${esc(schoolName)}</div>`;
+    // 进货表
+    html += `<div class="inv-section"><div class="inv-section-title" style="color:var(--red)">📥 进货</div>
+        <div class="inv-row" style="background:#f8f9fa;font-weight:600"><span class="inv-date">日期</span><span class="inv-name">品名</span><span class="inv-spec">规格</span><span class="inv-qty">数量</span><span class="inv-unit">单位</span><span class="inv-price">单价</span><span class="inv-amount">金额</span></div>`;
+    buyRecords.forEach(r => {
+        html += `<div class="inv-row"><span class="inv-date">${r.date}</span><span class="inv-name">${esc(r.prodName)}</span><span class="inv-spec">${esc(r.spec||'')}</span><span class="inv-qty">${r.qty}</span><span class="inv-unit">${esc(r.unit)}</span><span class="inv-price">¥${r.price.toFixed(2)}</span><span class="inv-amount">¥${r.amount.toFixed(2)}</span></div>`;
+    });
+    html += `<div style="text-align:right;font-weight:700;padding:4px;color:var(--red)">进货小计：¥${buyTotal.toFixed(2)}</div></div>`;
+
+    // 出货表
+    html += `<div class="inv-section"><div class="inv-section-title" style="color:var(--green)">📤 出货</div>
+        <div class="inv-row" style="background:#f8f9fa;font-weight:600"><span class="inv-date">日期</span><span class="inv-name">品名</span><span class="inv-spec">规格</span><span class="inv-qty">数量</span><span class="inv-unit">单位</span><span class="inv-price">单价</span><span class="inv-amount">金额</span></div>`;
+    sellRecords.forEach(r => {
+        html += `<div class="inv-row"><span class="inv-date">${r.date}</span><span class="inv-name">${esc(r.prodName)}</span><span class="inv-spec">${esc(r.spec||'')}</span><span class="inv-qty">${r.qty}</span><span class="inv-unit">${esc(r.unit)}</span><span class="inv-price">¥${r.price.toFixed(2)}</span><span class="inv-amount">¥${r.amount.toFixed(2)}</span></div>`;
+    });
+    html += `<div style="text-align:right;font-weight:700;padding:4px;color:var(--green)">出货小计：¥${sellTotal.toFixed(2)}</div></div>`;
+
+    // 收益
+    html += `<div style="text-align:right;font-size:1.05rem;font-weight:700;padding:8px;color:${profit>=0?'var(--green)':'var(--red)'}">收益：¥${profit.toFixed(2)}</div>`;
+    div.innerHTML = html;
+}
+
+function selectInvProduct(pid) {
+    const p = DB.get('products').find(x => x.id === pid); if (!p) return;
+    document.getElementById('invProdName').value = p.name;
+    document.getElementById('invProdSpec').value = p.spec || '';
+    document.getElementById('invProdUnit').value = p.unit;
+    document.getElementById('invProdBuyPrice').value = p.buyPrice;
+    document.getElementById('invProdSellPrice').value = p.sellPrice;
+    const type = document.getElementById('invType').value;
+    const price = type === 'buy' ? p.buyPrice : p.sellPrice;
+    document.getElementById('invProdInfo').innerHTML = `已选：<strong>${esc(p.name)}</strong> ${p.spec?esc(p.spec):''} | ${esc(p.unit)} | ${type==='buy'?'进价':'出价'}：¥${price.toFixed(2)}`;
+    document.getElementById('invProdInfo').style.display = 'block';
+    document.getElementById('invSearch').value = '';
+    document.getElementById('invSearchResults').style.display = 'none';
+}
+
+function addInvRecord() {
+    const schoolId = parseInt(document.getElementById('invSchool').value);
+    if (!schoolId) return alert('请选择学校');
+    const prodName = document.getElementById('invProdName').value;
+    if (!prodName) return alert('请搜索并选择产品');
+    const qty = parseFloat(document.getElementById('invQty').value);
+    if (!qty || qty <= 0) return alert('请输入数量');
+
+    const type = document.getElementById('invType').value;
+    const price = type === 'buy' ? parseFloat(document.getElementById('invProdBuyPrice').value) : parseFloat(document.getElementById('invProdSellPrice').value);
+    const date = document.getElementById('invDate').value;
+    const monthKey = date.substring(0, 7);
+
+    const customer = DB.get('customers').find(c => c.id === schoolId);
+    const record = {
+        id: nextId('invRecord'),
+        monthKey, date, type,
+        schoolId, schoolName: customer ? customer.name : '',
+        prodName, spec: document.getElementById('invProdSpec').value,
+        unit: document.getElementById('invProdUnit').value,
+        price, qty, amount: +(price * qty).toFixed(2)
+    };
+
+    const records = DB.get('invRecords') || [];
+    records.push(record);
+    DB.set('invRecords', records);
+
+    // 清空
+    document.getElementById('invProdName').value = '';
+    document.getElementById('invProdInfo').style.display = 'none';
+    document.getElementById('invQty').value = '';
+    refreshInvPage();
+}
+
+function changeMonth(delta) {
+    const input = document.getElementById('invMonth');
+    const [y, m] = input.value.split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    input.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    refreshInvPage();
+}
+
+function generateInvExcel() {
+    const monthKey = document.getElementById('invMonth').value;
+    const [year, month] = monthKey.split('-');
+    const records = (DB.get('invRecords')||[]).filter(r => r.monthKey === monthKey);
+    if (!records.length) return alert('本月暂无进销存记录');
+
+    // 按学校分组
+    const schoolMap = {};
+    records.forEach(r => {
+        if (!schoolMap[r.schoolName]) schoolMap[r.schoolName] = {buy:[], sell:[]};
+        schoolMap[r.schoolName][r.type].push(r);
+    });
+
+    const schools = Object.keys(schoolMap);
+    const rows = [];
+    // 标题
+    rows.push(['进 销 存 明 细 表', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    rows.push([`月份：${year}年${month}月`, '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+
+    // 表头行
+    rows.push(['进货', '', '', '', '', '', '', '出货', '', '', '', '', '收益', '学校名称']);
+    rows.push(['日期','产品名称','规格','数量','单位','单价','金额','日期','产品名称','规格','数量','单位','单价','金额','']);
+
+    // 每个学校
+    schools.forEach(schoolName => {
+        const data = schoolMap[schoolName];
+        const buyRows = data.buy;
+        const sellRows = data.sell;
+        const maxRows = Math.max(buyRows.length, sellRows.length);
+        let buyTotal = 0, sellTotal = 0;
+
+        for (let i = 0; i < maxRows; i++) {
+            const row = [];
+            if (i < buyRows.length) {
+                const b = buyRows[i]; buyTotal += b.amount;
+                row.push(b.date, b.prodName, b.spec||'', b.qty, b.unit, b.price, b.amount);
+            } else { row.push('', '', '', '', '', '', ''); }
+            if (i < sellRows.length) {
+                const s = sellRows[i]; sellTotal += s.amount;
+                row.push(s.date, s.prodName, s.spec||'', s.qty, s.unit, s.price, s.amount);
+            } else { row.push('', '', '', '', '', '', ''); }
+            row.push(i===0 ? (sellTotal - buyTotal).toFixed(2) : '');
+            row.push(i===0 ? schoolName : '');
+            rows.push(row);
+        }
+        // 小计行
+        rows.push(['进货小计：¥'+buyTotal.toFixed(2), '', '', '', '', '', '', '出货小计：¥'+sellTotal.toFixed(2), '', '', '', '', '', '', '收益：¥'+(sellTotal-buyTotal).toFixed(2), schoolName]);
+        rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [
+        {wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},
+        {wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},
+        {wch:10},{wch:10}
+    ];
+    // 标题合并
+    ws['!merges'] = [
+        {s:{r:0,c:0},e:{r:0,c:13}},
+        {s:{r:1,c:0},e:{r:1,c:13}},
+        {s:{r:3,c:0},e:{r:3,c:6}},
+        {s:{r:3,c:7},e:{r:3,c:13}},
+        {s:{r:3,c:14},e:{r:3,c:14}},
+        {s:{r:3,c:15},e:{r:3,c:15}},
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '进销存明细表');
+    XLSX.writeFile(wb, `进销存明细表_${year}年${month}月.xlsx`);
+}
 
 // ==================== 工具函数 ====================
-function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 // 点击空白关闭搜索
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.search-box')) {
         document.getElementById('searchResults').style.display = 'none';
+        const invResults = document.getElementById('invSearchResults');
+        if (invResults) invResults.style.display = 'none';
     }
 });
 
-// 初始加载
+// 初始化
 refreshCustomerList();
 refreshProductList();
-refreshOrderList();
 </script>
 </body>
 </html>
