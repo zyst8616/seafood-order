@@ -623,30 +623,9 @@ function generateOrder() {
     const orders = DB.get('orders'); orders.unshift(order); DB.set('orders', orders);
 
     // Build Excel
-    const rows = [
-        ['订  货  单', '', '', '', '', '', ''],
-        ['收货单位：' + order.customerName, '', '', '', '', '', ''],
-        ['订货日期：' + order.orderDate, '', '送货日期：' + (order.deliveryDate||''), '', '', '', ''],
-        ['联系人：' + (order.customerContact||''), '', '电话：' + (order.customerPhone||''), '', '', '', ''],
-        ['', '', '', '', '', '', ''],
-        ['序号', '商品名称', '规格', '单位', '数量', '单价(元)', '金额(元)'],
-    ];
-    order.items.forEach((it, i) => {
-        rows.push([i+1, it.name, it.spec||'', it.unit, it.quantity, it.sellPrice, +(it.sellPrice * it.quantity).toFixed(2)]);
-    });
-    rows.push(['', '', '', '', '', '合计：', +total.toFixed(2)]);
-    rows.push(['', '', '', '', '', '', '']);
-    rows.push(['备注：' + (order.note||''), '', '', '', '', '', '']);
-
+    const rows = buildOrderExcelRows(order, total);
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{wch:5},{wch:16},{wch:8},{wch:6},{wch:8},{wch:10},{wch:10}];
-    ws['!merges'] = [
-        {s:{r:0,c:0},e:{r:0,c:6}}, {s:{r:1,c:0},e:{r:1,c:6}},
-        {s:{r:2,c:0},e:{r:2,c:1}}, {s:{r:2,c:2},e:{r:2,c:6}},
-        {s:{r:3,c:0},e:{r:3,c:1}}, {s:{r:3,c:2},e:{r:3,c:6}},
-        {s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:5}},
-        {s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:6}},
-    ];
+    applyOrderExcelStyle(ws, rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '订货单');
     XLSX.writeFile(wb, `订货单_${order.customerName}_${order.orderDate}.xlsx`);
@@ -686,27 +665,73 @@ function viewOrder(id) {
 
 function downloadOrderExcel(id) {
     const order = DB.get('orders').find(o => o.id === id); if (!order) return;
+    let total = order.items.reduce((s,it) => s + it.sellPrice*it.quantity, 0);
+    const rows = buildOrderExcelRows(order, total);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    applyOrderExcelStyle(ws, rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '订货单');
+    XLSX.writeFile(wb, `订货单_${order.customerName}_${order.orderDate}.xlsx`);
+}
+
+// 构建订货单Excel数据行
+function buildOrderExcelRows(order, total) {
     const rows = [
-        ['订  货  单', '', '', '', '', '', ''],
-        ['收货单位：' + order.customerName, '', '', '', '', '', ''],
-        ['订货日期：' + order.orderDate, '', '送货日期：' + (order.deliveryDate||''), '', '', '', ''],
-        ['联系人：' + (order.customerContact||''), '', '电话：' + (order.customerPhone||''), '', '', '', ''],
+        ['深圳市亿客视频有限公司', '', '', '', '', '', ''],
+        ['MEIDAIZI BAG INDUSTRY CO,LTD.', '', '', '', '', '', ''],
+        ['地址：汕头市潮南区峡山街道', '', '', '', '', '', ''],
+        ['电话：18929622288  13539663322', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', ''],
+        ['收货单位：' + order.customerName, '', '', '订货日期：' + order.orderDate, '', '', ''],
+        ['联系人：' + (order.customerContact||''), '', '', '送货日期：' + (order.deliveryDate||''), '', '', ''],
         ['', '', '', '', '', '', ''],
         ['序号', '商品名称', '规格', '单位', '数量', '单价(元)', '金额(元)'],
     ];
     order.items.forEach((it, i) => {
         rows.push([i+1, it.name, it.spec||'', it.unit, it.quantity, it.sellPrice, +(it.sellPrice * it.quantity).toFixed(2)]);
     });
-    let total = order.items.reduce((s,it) => s + it.sellPrice*it.quantity, 0);
     rows.push(['', '', '', '', '', '合计：', +total.toFixed(2)]);
     rows.push(['', '', '', '', '', '', '']);
     rows.push(['备注：' + (order.note||''), '', '', '', '', '', '']);
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{wch:5},{wch:16},{wch:8},{wch:6},{wch:8},{wch:10},{wch:10}];
-    ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}},{s:{r:2,c:0},e:{r:2,c:1}},{s:{r:2,c:2},e:{r:2,c:6}},{s:{r:3,c:0},e:{r:3,c:1}},{s:{r:3,c:2},e:{r:3,c:6}},{s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:5}},{s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:6}}];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '订货单');
-    XLSX.writeFile(wb, `订货单_${order.customerName}_${order.orderDate}.xlsx`);
+    return rows;
+}
+
+// 设置订货单Excel样式（合并单元格）
+function applyOrderExcelStyle(ws, rows) {
+    ws['!cols'] = [
+        {wch:6},{wch:16},{wch:8},{wch:6},{wch:8},{wch:10},{wch:10}
+    ];
+    ws['!merges'] = [
+        {s:{r:0,c:0},e:{r:0,c:6}},  // 公司名
+        {s:{r:1,c:0},e:{r:1,c:6}},  // 英文名
+        {s:{r:2,c:0},e:{r:2,c:6}},  // 地址
+        {s:{r:3,c:0},e:{r:3,c:6}},  // 电话
+        {s:{r:5,c:0},e:{r:5,c:2}},  // 收货单位
+        {s:{r:5,c:3},e:{r:5,c:6}},  // 订货日期
+        {s:{r:6,c:0},e:{r:6,c:2}},  // 联系人
+        {s:{r:6,c:3},e:{r:6,c:6}},  // 送货日期
+        {s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:5}}, // 合计标签
+        {s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:6}}, // 备注
+    ];
+    // 设置公司名行高度和样式
+    for (let c = 0; c < 7; c++) {
+        const cell0 = XLSX.utils.encode_cell({r:0, c:c});
+        const cell1 = XLSX.utils.encode_cell({r:1, c:c});
+        if (!ws[cell0]) ws[cell0] = {t:'s', v:''};
+        if (!ws[cell1]) ws[cell1] = {t:'s', v:''};
+        // 公司名加粗
+        if (ws[cell0].s === undefined) ws[cell0].s = {};
+        ws[cell0].s.font = {bold: true, sz: 18};
+        if (ws[cell1].s === undefined) ws[cell1].s = {};
+        ws[cell1].s.font = {bold: true, sz: 14};
+    }
+    // 表头加粗
+    for (let c = 0; c < 7; c++) {
+        const hdr = XLSX.utils.encode_cell({r: 8, c: c});
+        if (!ws[hdr]) ws[hdr] = {t:'s', v:''};
+        if (ws[hdr].s === undefined) ws[hdr].s = {};
+        ws[hdr].s.font = {bold: true};
+    }
 }
 
 // ==================== 进销存明细 ====================
