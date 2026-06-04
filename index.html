@@ -221,12 +221,13 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
                 <div><span class="field-label">送货日期</span><input type="date" id="deliveryDate" class="big-input"></div>
             </div>
             <div style="margin-top:6px"><span class="field-label">备注</span><input type="text" id="orderNote" class="big-input" placeholder="如：分装、上午送"></div>
+            <div style="margin-top:6px"><span class="field-label">连上累欠</span><input type="text" id="orderDebt" class="big-input" placeholder="填写累计欠款金额（选填）"></div>
         </div>
         <div class="card">
             <div class="card-title">③ 商品清单</div>
             <div id="orderItems"><div class="empty">还没有添加商品，请搜索并选择</div></div>
             <div class="search-box">
-                <input type="text" id="productSearch" class="big-input" placeholder="🔍 搜产品（输入第一个字即可）" autocomplete="off" oninput="searchProducts('order')" onfocus="searchProducts('order')">
+                <input type="text" id="productSearch" class="big-input" placeholder="🔍 搜产品（输入第一个字即可）" autocomplete="off" oninput="searchProducts()" onfocus="searchProducts()">
                 <div class="search-results" id="searchResults"></div>
             </div>
             <div class="total-bar">合计：<span id="totalAmount">¥0.00</span></div>
@@ -284,26 +285,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
         <div class="inv-summary" id="invSummary"></div>
         <!-- 进货/出货明细 -->
         <div id="invDetail"></div>
-        <!-- 添加记录 -->
-        <div class="card" style="margin-top:10px">
-            <div class="card-title">+ 添加记录</div>
-            <select id="invSchool" class="big-input" style="margin-bottom:6px"><option value="">选择学校</option></select>
-            <div class="f-row f-row-2" style="margin-bottom:6px">
-                <select id="invType" class="big-input"><option value="buy">进货</option><option value="sell">出货</option></select>
-                <input type="date" id="invDate" class="big-input">
-            </div>
-            <div class="search-box">
-                <input type="text" id="invSearch" class="big-input" placeholder="🔍 搜索产品" autocomplete="off" oninput="searchProducts('inv')" onfocus="searchProducts('inv')">
-                <div class="search-results" id="invSearchResults"></div>
-            </div>
-            <input type="hidden" id="invProdName">
-            <input type="hidden" id="invProdSpec">
-            <input type="hidden" id="invProdUnit">
-            <input type="hidden" id="invProdBuyPrice">
-            <input type="hidden" id="invProdSellPrice">
-            <div id="invProdInfo" style="display:none;padding:6px;background:#f0f7ff;border-radius:6px;margin:6px 0;font-size:.85rem"></div>
-            <div class="f-row" style="margin-top:6px"><input type="number" id="invQty" placeholder="数量" step="0.1" min="0.1" style="flex:1"><button class="btn btn-green" style="flex:1" onclick="addInvRecord()">添加记录</button></div>
-        </div>
+        <div class="hint" style="text-align:center;margin:8px 0">📌 数据自动从订单同步，创建/删除订单后实时更新</div>
         <button class="btn btn-block btn-orange" onclick="generateInvExcel()">📥 生成进销存明细 Excel</button>
     </div>
 
@@ -579,6 +561,7 @@ function refreshOrderPage() {
     document.getElementById('orderDate').value = today;
     document.getElementById('deliveryDate').value = new Date(Date.now()+2*86400000).toISOString().split('T')[0];
     document.getElementById('orderNote').value = '';
+    document.getElementById('orderDebt').value = '';
     document.getElementById('customerInfo').innerHTML = '';
     orderItems = [];
     renderOrderItems();
@@ -593,22 +576,20 @@ function onCustomerChange() {
     checkSubmit();
 }
 
-function searchProducts(source) {
-    const searchInput = source === 'inv' ? document.getElementById('invSearch') : document.getElementById('productSearch');
-    const resultsDiv = source === 'inv' ? document.getElementById('invSearchResults') : document.getElementById('searchResults');
+function searchProducts() {
+    const searchInput = document.getElementById('productSearch');
+    const resultsDiv = document.getElementById('searchResults');
     const q = searchInput.value.trim().toLowerCase();
     const all = DB.get('products');
     let results;
     if (!q) { results = all; }
-    else { results = all.filter(p => p.name.includes(q) || p.name.startsWith(q) || p.name.charAt(0) === q.charAt(0)); }
+    else { results = all.filter(function(p) { return p.name.includes(q) || p.name.startsWith(q) || p.name.charAt(0) === q.charAt(0); }); }
     if (!results.length) {
         resultsDiv.innerHTML = '<div class="search-empty">没有匹配的产品</div>';
     } else {
-        resultsDiv.innerHTML = results.map(p => `
-            <div class="search-item" onclick="${source==='inv'?'selectInvProduct':'selectOrderProduct'}(${p.id})">
-                <span class="search-item-name">${esc(p.name)} ${p.spec?esc(p.spec):''}</span>
-                <span class="search-item-price">¥${p.sellPrice.toFixed(2)}/${esc(p.unit)}</span>
-            </div>`).join('');
+        resultsDiv.innerHTML = results.map(function(p) {
+            return '<div class="search-item" onclick="selectOrderProduct('+p.id+')"><span class="search-item-name">'+esc(p.name)+' '+esc(p.spec||'')+'</span><span class="search-item-price">¥'+p.sellPrice.toFixed(2)+'/'+esc(p.unit)+'</span></div>';
+        }).join('');
     }
     resultsDiv.style.display = 'block';
 }
@@ -664,11 +645,14 @@ function generateOrder() {
     const orderDate = document.getElementById('orderDate').value;
     const deliveryDate = document.getElementById('deliveryDate').value;
     const note = document.getElementById('orderNote').value.trim();
+    const debt = document.getElementById('orderDebt').value.trim();
     const total = orderItems.reduce((s, i) => s + i.sellPrice * i.quantity, 0);
+    // 进货总额
+    const buyTotal = orderItems.reduce((s, i) => s + i.buyPrice * i.quantity, 0);
 
     const order = {
         id: nextId('orders'), customerName: customer.name, customerContact: customer.contact,
-        customerPhone: customer.phone, orderDate, deliveryDate, note, total,
+        customerPhone: customer.phone, orderDate, deliveryDate, note, debt, total, buyTotal,
         items: orderItems.map(i => ({...i})), createdAt: new Date().toISOString()
     };
     const orders = DB.get('orders'); orders.unshift(order); DB.set('orders', orders);
@@ -716,7 +700,7 @@ function buildOrderHTML(order) {
         '</div>' +
         '<div class="op-total-area">合计：¥'+total.toFixed(2)+'</div>' +
         (order.note ? '<div class="op-note-area">备注：'+esc(order.note)+'</div>' : '') +
-        '<div class="op-debt-area">连上累欠：<span class="op-debt-line"></span></div>' +
+        '<div class="op-debt-area">连上累欠：<span class="op-debt-line">' + (order.debt ? esc(order.debt) : '') + '</span></div>' +
         '<div class="op-footer">感谢惠顾 · 亿客食品有限公司</div>';
 }
 
@@ -766,7 +750,7 @@ function refreshOrderList() {
                 <div class="list-sub">${o.deliveryDate?'🚚'+o.deliveryDate+' · ':''}${o.items.length}种${o.note?' · 💬'+esc(o.note):''}</div>
                 <div class="order-sum">¥${o.total.toFixed(2)}</div>
             </div>
-            <div class="list-act"><button class="btn-sm btn-green" onclick="event.stopPropagation();previewOrderImage(${o.id})">📥</button></div>
+            <div class="list-act"><button class="btn-sm btn-green" onclick="event.stopPropagation();previewOrderImage(${o.id})">📥</button><button class="btn-sm btn-danger" onclick="event.stopPropagation();deleteOrder(${o.id})">🗑</button></div>
         </div>`).join('');
 }
 
@@ -793,6 +777,13 @@ function previewOrderImage(id) {
         currentOrderImageData = imgData;
         showPreview(imgData, order);
     });
+}
+
+function deleteOrder(id) {
+    if (!confirm('确定删除这笔订单吗？此操作不可恢复。')) return;
+    var orders = DB.get('orders').filter(function(o){return o.id !== id;});
+    DB.set('orders', orders);
+    refreshOrderList();
 }
 
 function downloadOrderExcel(id) {
@@ -854,7 +845,7 @@ function applyOrderExcelStyle(ws, rows) {
     }
 }
 
-// ==================== 进销存明细 ====================
+// ==================== 进销存明细（从订单自动统计） ====================
 function refreshInvPage() {
     const now = new Date();
     const monthInput = document.getElementById('invMonth');
@@ -862,202 +853,146 @@ function refreshInvPage() {
 
     const [year, month] = monthInput.value.split('-');
     const monthKey = year + '-' + month;
-    const allRecords = DB.get('invRecords') || [];
-    const records = allRecords.filter(r => r.monthKey === monthKey);
+    const orders = DB.get('orders');
+
+    // 从订单中提取当月数据：每个订单项 = 进货(buyPrice×qty) + 出货(sellPrice×qty)
+    const schoolMap = {}; // {schoolName: {buy:[], sell:[], buyTotal, sellTotal}}
+    orders.forEach(function(o) {
+        if (o.orderDate.substring(0,7) !== monthKey) return;
+        if (!schoolMap[o.customerName]) schoolMap[o.customerName] = {buy:[], sell:[], buyTotal:0, sellTotal:0};
+        o.items.forEach(function(it) {
+            var buyAmt = +(it.buyPrice * it.quantity).toFixed(2);
+            var sellAmt = +(it.sellPrice * it.quantity).toFixed(2);
+            schoolMap[o.customerName].buy.push({date:o.orderDate, name:it.name, spec:it.spec||'', unit:it.unit, qty:it.quantity, price:it.buyPrice, amount:buyAmt});
+            schoolMap[o.customerName].sell.push({date:o.orderDate, name:it.name, spec:it.spec||'', unit:it.unit, qty:it.quantity, price:it.sellPrice, amount:sellAmt});
+            schoolMap[o.customerName].buyTotal += buyAmt;
+            schoolMap[o.customerName].sellTotal += sellAmt;
+        });
+    });
+
+    const schools = Object.keys(schoolMap);
 
     // 学校tabs
-    const schools = [...new Set(records.map(r => r.schoolName))];
-    let activeSchool = schools[0] || '';
-    const tabsDiv = document.getElementById('schoolTabs');
-    tabsDiv.innerHTML = schools.map(s => `<span class="school-tab active" data-school="${esc(s)}" onclick="filterInvSchool('${esc(s)}')">${esc(s)}</span>`).join('');
-    if (!schools.length) tabsDiv.innerHTML = '<span style="font-size:.85rem;color:var(--text-light)">暂无记录</span>';
-
-    // 更新学校下拉
-    const customers = DB.get('customers');
-    document.getElementById('invSchool').innerHTML = '<option value="">选择学校</option>' + customers.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
-    document.getElementById('invDate').value = now.toISOString().split('T')[0];
-
-    // 默认选中第一个学校
-    renderInvDetail(records, activeSchool);
+    var tabsDiv = document.getElementById('schoolTabs');
+    if (schools.length) {
+        tabsDiv.innerHTML = schools.map(function(s, i) {
+            return '<span class="school-tab'+(i===0?' active':'')+'" data-school="'+esc(s)+'" onclick="filterInvSchool(\''+esc(s)+'\')">'+esc(s)+'</span>';
+        }).join('');
+    } else {
+        tabsDiv.innerHTML = '<span style="font-size:.85rem;color:var(--text-light)">本月暂无订单</span>';
+    }
 
     // 汇总
-    let totalBuy = 0, totalSell = 0;
-    records.forEach(r => { if (r.type === 'buy') totalBuy += r.amount; else totalSell += r.amount; });
-    const profit = totalSell - totalBuy;
-    document.getElementById('invSummary').innerHTML = `
-        <div class="sum-item"><div class="sum-val" style="color:var(--red)">¥${totalBuy.toFixed(2)}</div><div class="sum-label">进货总额</div></div>
-        <div class="sum-item"><div class="sum-val" style="color:var(--green)">¥${totalSell.toFixed(2)}</div><div class="sum-label">出货总额</div></div>
-        <div class="sum-item"><div class="sum-val" style="color:${profit>=0?'var(--green)':'var(--red)'}">¥${profit.toFixed(2)}</div><div class="sum-label">收益</div></div>`;
+    var totalBuy = 0, totalSell = 0;
+    schools.forEach(function(s) { totalBuy += schoolMap[s].buyTotal; totalSell += schoolMap[s].sellTotal; });
+    var profit = totalSell - totalBuy;
+    document.getElementById('invSummary').innerHTML =
+        '<div class="sum-item"><div class="sum-val" style="color:var(--red)">¥'+totalBuy.toFixed(2)+'</div><div class="sum-label">进货总额</div></div>'+
+        '<div class="sum-item"><div class="sum-val" style="color:var(--green)">¥'+totalSell.toFixed(2)+'</div><div class="sum-label">出货总额</div></div>'+
+        '<div class="sum-item"><div class="sum-val" style="color:'+(profit>=0?'var(--green)':'var(--red)')+'">¥'+profit.toFixed(2)+'</div><div class="sum-label">收益</div></div>';
+
+    // 默认显示第一个学校
+    window._invSchoolMap = schoolMap;
+    if (schools.length) renderInvDetail(schools[0]);
+    else document.getElementById('invDetail').innerHTML = '<div class="empty">本月暂无订单记录<br><small>创建订单后会自动统计</small></div>';
 }
 
 function filterInvSchool(schoolName) {
-    const monthKey = document.getElementById('invMonth').value;
-    const records = (DB.get('invRecords')||[]).filter(r => r.monthKey === monthKey);
-    // 更新tabs高亮
-    document.querySelectorAll('#schoolTabs .school-tab').forEach(t => t.classList.toggle('active', t.dataset.school === schoolName));
-    renderInvDetail(records, schoolName);
+    document.querySelectorAll('#schoolTabs .school-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.school === schoolName); });
+    renderInvDetail(schoolName);
 }
 
-function renderInvDetail(records, schoolName) {
-    const div = document.getElementById('invDetail');
-    const schoolRecords = records.filter(r => r.schoolName === schoolName);
-    if (!schoolRecords.length) { div.innerHTML = '<div class="empty">该学校本月暂无记录</div>'; return; }
+function renderInvDetail(schoolName) {
+    var data = window._invSchoolMap[schoolName];
+    if (!data) { document.getElementById('invDetail').innerHTML = '<div class="empty">暂无数据</div>'; return; }
+    var buyTotal = data.buyTotal, sellTotal = data.sellTotal, profit = sellTotal - buyTotal;
 
-    const buyRecords = schoolRecords.filter(r => r.type === 'buy');
-    const sellRecords = schoolRecords.filter(r => r.type === 'sell');
-    const buyTotal = buyRecords.reduce((s,r) => s + r.amount, 0);
-    const sellTotal = sellRecords.reduce((s,r) => s + r.amount, 0);
-    const profit = sellTotal - buyTotal;
+    var html = '<div style="font-weight:700;font-size:.95rem;margin-bottom:4px">📋 '+esc(schoolName)+'</div>';
 
-    let html = `<div style="font-weight:700;font-size:.95rem;margin-bottom:4px">📋 ${esc(schoolName)}</div>`;
     // 进货表
-    html += `<div class="inv-section"><div class="inv-section-title" style="color:var(--red)">📥 进货</div>
-        <div class="inv-row" style="background:#f8f9fa;font-weight:600"><span class="inv-date">日期</span><span class="inv-name">品名</span><span class="inv-spec">规格</span><span class="inv-qty">数量</span><span class="inv-unit">单位</span><span class="inv-price">单价</span><span class="inv-amount">金额</span></div>`;
-    buyRecords.forEach(r => {
-        html += `<div class="inv-row"><span class="inv-date">${r.date}</span><span class="inv-name">${esc(r.prodName)}</span><span class="inv-spec">${esc(r.spec||'')}</span><span class="inv-qty">${r.qty}</span><span class="inv-unit">${esc(r.unit)}</span><span class="inv-price">¥${r.price.toFixed(2)}</span><span class="inv-amount">¥${r.amount.toFixed(2)}</span></div>`;
+    html += '<div class="inv-section"><div class="inv-section-title" style="color:var(--red)">📥 进货（成本）</div>'+
+        '<div class="inv-row" style="background:#f8f9fa;font-weight:600"><span class="inv-date">日期</span><span class="inv-name">品名</span><span class="inv-spec">规格</span><span class="inv-qty">数量</span><span class="inv-unit">单位</span><span class="inv-price">进价</span><span class="inv-amount">金额</span></div>';
+    data.buy.forEach(function(r) {
+        html += '<div class="inv-row"><span class="inv-date">'+r.date+'</span><span class="inv-name">'+esc(r.name)+'</span><span class="inv-spec">'+esc(r.spec)+'</span><span class="inv-qty">'+r.qty+'</span><span class="inv-unit">'+esc(r.unit)+'</span><span class="inv-price">¥'+r.price.toFixed(2)+'</span><span class="inv-amount">¥'+r.amount.toFixed(2)+'</span></div>';
     });
-    html += `<div style="text-align:right;font-weight:700;padding:4px;color:var(--red)">进货小计：¥${buyTotal.toFixed(2)}</div></div>`;
+    html += '<div style="text-align:right;font-weight:700;padding:4px;color:var(--red)">进货小计：¥'+buyTotal.toFixed(2)+'</div></div>';
 
     // 出货表
-    html += `<div class="inv-section"><div class="inv-section-title" style="color:var(--green)">📤 出货</div>
-        <div class="inv-row" style="background:#f8f9fa;font-weight:600"><span class="inv-date">日期</span><span class="inv-name">品名</span><span class="inv-spec">规格</span><span class="inv-qty">数量</span><span class="inv-unit">单位</span><span class="inv-price">单价</span><span class="inv-amount">金额</span></div>`;
-    sellRecords.forEach(r => {
-        html += `<div class="inv-row"><span class="inv-date">${r.date}</span><span class="inv-name">${esc(r.prodName)}</span><span class="inv-spec">${esc(r.spec||'')}</span><span class="inv-qty">${r.qty}</span><span class="inv-unit">${esc(r.unit)}</span><span class="inv-price">¥${r.price.toFixed(2)}</span><span class="inv-amount">¥${r.amount.toFixed(2)}</span></div>`;
+    html += '<div class="inv-section"><div class="inv-section-title" style="color:var(--green)">📤 出货（销售）</div>'+
+        '<div class="inv-row" style="background:#f8f9fa;font-weight:600"><span class="inv-date">日期</span><span class="inv-name">品名</span><span class="inv-spec">规格</span><span class="inv-qty">数量</span><span class="inv-unit">单位</span><span class="inv-price">售价</span><span class="inv-amount">金额</span></div>';
+    data.sell.forEach(function(r) {
+        html += '<div class="inv-row"><span class="inv-date">'+r.date+'</span><span class="inv-name">'+esc(r.name)+'</span><span class="inv-spec">'+esc(r.spec)+'</span><span class="inv-qty">'+r.qty+'</span><span class="inv-unit">'+esc(r.unit)+'</span><span class="inv-price">¥'+r.price.toFixed(2)+'</span><span class="inv-amount">¥'+r.amount.toFixed(2)+'</span></div>';
     });
-    html += `<div style="text-align:right;font-weight:700;padding:4px;color:var(--green)">出货小计：¥${sellTotal.toFixed(2)}</div></div>`;
+    html += '<div style="text-align:right;font-weight:700;padding:4px;color:var(--green)">出货小计：¥'+sellTotal.toFixed(2)+'</div></div>';
 
-    // 收益
-    html += `<div style="text-align:right;font-size:1.05rem;font-weight:700;padding:8px;color:${profit>=0?'var(--green)':'var(--red)'}">收益：¥${profit.toFixed(2)}</div>`;
-    div.innerHTML = html;
-}
-
-function selectInvProduct(pid) {
-    const p = DB.get('products').find(x => x.id === pid); if (!p) return;
-    document.getElementById('invProdName').value = p.name;
-    document.getElementById('invProdSpec').value = p.spec || '';
-    document.getElementById('invProdUnit').value = p.unit;
-    document.getElementById('invProdBuyPrice').value = p.buyPrice;
-    document.getElementById('invProdSellPrice').value = p.sellPrice;
-    const type = document.getElementById('invType').value;
-    const price = type === 'buy' ? p.buyPrice : p.sellPrice;
-    document.getElementById('invProdInfo').innerHTML = `已选：<strong>${esc(p.name)}</strong> ${p.spec?esc(p.spec):''} | ${esc(p.unit)} | ${type==='buy'?'进价':'出价'}：¥${price.toFixed(2)}`;
-    document.getElementById('invProdInfo').style.display = 'block';
-    document.getElementById('invSearch').value = '';
-    document.getElementById('invSearchResults').style.display = 'none';
-}
-
-function addInvRecord() {
-    const schoolId = parseInt(document.getElementById('invSchool').value);
-    if (!schoolId) return alert('请选择学校');
-    const prodName = document.getElementById('invProdName').value;
-    if (!prodName) return alert('请搜索并选择产品');
-    const qty = parseFloat(document.getElementById('invQty').value);
-    if (!qty || qty <= 0) return alert('请输入数量');
-
-    const type = document.getElementById('invType').value;
-    const price = type === 'buy' ? parseFloat(document.getElementById('invProdBuyPrice').value) : parseFloat(document.getElementById('invProdSellPrice').value);
-    const date = document.getElementById('invDate').value;
-    const monthKey = date.substring(0, 7);
-
-    const customer = DB.get('customers').find(c => c.id === schoolId);
-    const record = {
-        id: nextId('invRecord'),
-        monthKey, date, type,
-        schoolId, schoolName: customer ? customer.name : '',
-        prodName, spec: document.getElementById('invProdSpec').value,
-        unit: document.getElementById('invProdUnit').value,
-        price, qty, amount: +(price * qty).toFixed(2)
-    };
-
-    const records = DB.get('invRecords') || [];
-    records.push(record);
-    DB.set('invRecords', records);
-
-    // 清空
-    document.getElementById('invProdName').value = '';
-    document.getElementById('invProdInfo').style.display = 'none';
-    document.getElementById('invQty').value = '';
-    refreshInvPage();
+    html += '<div style="text-align:right;font-size:1.05rem;font-weight:700;padding:8px;color:'+(profit>=0?'var(--green)':'var(--red)')+'">收益：¥'+profit.toFixed(2)+'</div>';
+    document.getElementById('invDetail').innerHTML = html;
 }
 
 function changeMonth(delta) {
-    const input = document.getElementById('invMonth');
-    const [y, m] = input.value.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
+    var input = document.getElementById('invMonth');
+    var parts = input.value.split('-').map(Number);
+    var d = new Date(parts[0], parts[1] - 1 + delta, 1);
     input.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     refreshInvPage();
 }
 
 function generateInvExcel() {
-    const monthKey = document.getElementById('invMonth').value;
-    const [year, month] = monthKey.split('-');
-    const records = (DB.get('invRecords')||[]).filter(r => r.monthKey === monthKey);
-    if (!records.length) return alert('本月暂无进销存记录');
-
-    // 按学校分组
-    const schoolMap = {};
-    records.forEach(r => {
-        if (!schoolMap[r.schoolName]) schoolMap[r.schoolName] = {buy:[], sell:[]};
-        schoolMap[r.schoolName][r.type].push(r);
+    var monthKey = document.getElementById('invMonth').value;
+    var parts = monthKey.split('-');
+    var year = parts[0], month = parts[1];
+    var orders = DB.get('orders');
+    var schoolMap = {};
+    orders.forEach(function(o) {
+        if (o.orderDate.substring(0,7) !== monthKey) return;
+        if (!schoolMap[o.customerName]) schoolMap[o.customerName] = {buy:[], sell:[], buyTotal:0, sellTotal:0};
+        o.items.forEach(function(it) {
+            var buyAmt = +(it.buyPrice * it.quantity).toFixed(2);
+            var sellAmt = +(it.sellPrice * it.quantity).toFixed(2);
+            schoolMap[o.customerName].buy.push({date:o.orderDate, name:it.name, spec:it.spec||'', unit:it.unit, qty:it.quantity, price:it.buyPrice, amount:buyAmt});
+            schoolMap[o.customerName].sell.push({date:o.orderDate, name:it.name, spec:it.spec||'', unit:it.unit, qty:it.quantity, price:it.sellPrice, amount:sellAmt});
+            schoolMap[o.customerName].buyTotal += buyAmt;
+            schoolMap[o.customerName].sellTotal += sellAmt;
+        });
     });
 
-    const schools = Object.keys(schoolMap);
-    const rows = [];
-    // 标题
+    var schools = Object.keys(schoolMap);
+    if (!schools.length) return alert('本月暂无订单记录');
+
+    var rows = [];
     rows.push(['进 销 存 明 细 表', '', '', '', '', '', '', '', '', '', '', '', '', '']);
-    rows.push([`月份：${year}年${month}月`, '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    rows.push(['月份：'+year+'年'+month+'月', '', '', '', '', '', '', '', '', '', '', '', '', '']);
     rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '']);
-
-    // 表头行
     rows.push(['进货', '', '', '', '', '', '', '出货', '', '', '', '', '收益', '学校名称']);
-    rows.push(['日期','产品名称','规格','数量','单位','单价','金额','日期','产品名称','规格','数量','单位','单价','金额','']);
+    rows.push(['日期','产品名称','规格','数量','单位','单价','金额','日期','产品名称','规格','数量','单位','单价','金额','','']);
 
-    // 每个学校
-    schools.forEach(schoolName => {
-        const data = schoolMap[schoolName];
-        const buyRows = data.buy;
-        const sellRows = data.sell;
-        const maxRows = Math.max(buyRows.length, sellRows.length);
-        let buyTotal = 0, sellTotal = 0;
-
-        for (let i = 0; i < maxRows; i++) {
-            const row = [];
-            if (i < buyRows.length) {
-                const b = buyRows[i]; buyTotal += b.amount;
-                row.push(b.date, b.prodName, b.spec||'', b.qty, b.unit, b.price, b.amount);
-            } else { row.push('', '', '', '', '', '', ''); }
-            if (i < sellRows.length) {
-                const s = sellRows[i]; sellTotal += s.amount;
-                row.push(s.date, s.prodName, s.spec||'', s.qty, s.unit, s.price, s.amount);
-            } else { row.push('', '', '', '', '', '', ''); }
-            row.push(i===0 ? (sellTotal - buyTotal).toFixed(2) : '');
+    schools.forEach(function(schoolName) {
+        var data = schoolMap[schoolName];
+        var maxRows = Math.max(data.buy.length, data.sell.length);
+        for (var i = 0; i < maxRows; i++) {
+            var row = [];
+            if (i < data.buy.length) { var b = data.buy[i]; row.push(b.date, b.name, b.spec, b.qty, b.unit, b.price, b.amount); }
+            else row.push('','','','','','','');
+            if (i < data.sell.length) { var s = data.sell[i]; row.push(s.date, s.name, s.spec, s.qty, s.unit, s.price, s.amount); }
+            else row.push('','','','','','','');
+            row.push(i===0 ? (data.sellTotal - data.buyTotal).toFixed(2) : '');
             row.push(i===0 ? schoolName : '');
             rows.push(row);
         }
-        // 小计行
-        rows.push(['进货小计：¥'+buyTotal.toFixed(2), '', '', '', '', '', '', '出货小计：¥'+sellTotal.toFixed(2), '', '', '', '', '', '', '收益：¥'+(sellTotal-buyTotal).toFixed(2), schoolName]);
-        rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        rows.push(['进货小计：¥'+data.buyTotal.toFixed(2),'','','','','','','出货小计：¥'+data.sellTotal.toFixed(2),'','','','','','收益：¥'+(data.sellTotal-data.buyTotal).toFixed(2), schoolName]);
+        rows.push(['','','','','','','','','','','','','','']);
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [
-        {wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},
-        {wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},
-        {wch:10},{wch:10}
-    ];
-    // 标题合并
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},{wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},{wch:10},{wch:10}];
     ws['!merges'] = [
-        {s:{r:0,c:0},e:{r:0,c:13}},
-        {s:{r:1,c:0},e:{r:1,c:13}},
-        {s:{r:3,c:0},e:{r:3,c:6}},
-        {s:{r:3,c:7},e:{r:3,c:13}},
-        {s:{r:3,c:14},e:{r:3,c:14}},
-        {s:{r:3,c:15},e:{r:3,c:15}},
+        {s:{r:0,c:0},e:{r:0,c:13}}, {s:{r:1,c:0},e:{r:1,c:13}},
+        {s:{r:3,c:0},e:{r:3,c:6}}, {s:{r:3,c:7},e:{r:3,c:13}},
+        {s:{r:3,c:14},e:{r:3,c:14}}, {s:{r:3,c:15},e:{r:3,c:15}},
     ];
-
-    const wb = XLSX.utils.book_new();
+    var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '进销存明细表');
-    XLSX.writeFile(wb, `进销存明细表_${year}年${month}月.xlsx`);
+    XLSX.writeFile(wb, '进销存明细表_'+year+'年'+month+'月.xlsx');
 }
 
 // ==================== 工具函数 ====================
@@ -1067,8 +1002,6 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.search-box')) {
         document.getElementById('searchResults').style.display = 'none';
-        const invResults = document.getElementById('invSearchResults');
-        if (invResults) invResults.style.display = 'none';
     }
 });
 
