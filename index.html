@@ -146,20 +146,29 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 
 /* 订单图片预览 */
 .order-preview-wrap{position:fixed;left:-9999px;top:0;z-index:-1}
-.order-preview{width:750px;background:#fff;padding:40px 50px;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
-.order-preview .op-company{text-align:center;font-size:28px;font-weight:900;margin-bottom:6px}
-.order-preview .op-english{text-align:center;font-size:18px;font-weight:700;margin-bottom:14px;text-transform:uppercase}
-.order-preview .op-info{text-align:center;font-size:14px;color:#555;margin-bottom:2px}
-.order-preview .op-divider{border:none;border-top:2px solid #333;margin:18px 0}
-.order-preview .op-customer{font-size:16px;margin-bottom:10px;display:flex;gap:40px;flex-wrap:wrap}
-.order-preview .op-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px}
-.order-preview .op-table th{background:#f0f0f0;padding:10px 6px;border:1.5px solid #333;font-weight:700;text-align:center}
-.order-preview .op-table td{padding:8px 6px;border:1.5px solid #333;text-align:center}
+.order-preview{width:750px;background:#fff;padding:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;border:2px solid #333}
+/* 顶部公司信息区 */
+.order-preview .op-top{text-align:center;padding:28px 40px 0;border-bottom:0.5px solid #ddd}
+.order-preview .op-company{font-size:36px;font-weight:900;margin-bottom:12px;letter-spacing:4px}
+.order-preview .op-info-row{display:flex;justify-content:center;gap:30px;font-size:10px;color:#888;margin-bottom:4px}
+.order-preview .op-info-divider{width:60%;margin:8px auto 0;border:none;border-top:0.5px solid #e8e8e8}
+/* 客户信息区 */
+.order-preview .op-customer-area{padding:12px 40px;border-bottom:1px solid #333;display:flex;gap:30px;font-size:15px}
+/* 表格区 */
+.order-preview .op-table-area{padding:0 40px}
+.order-preview .op-table{width:100%;border-collapse:collapse;margin:0;font-size:15px}
+.order-preview .op-table th{background:#f9f9f9;padding:10px 6px;border:1px solid #333;font-weight:700;text-align:center}
+.order-preview .op-table td{padding:8px 6px;border:1px solid #333;text-align:center}
 .order-preview .op-table .td-name{text-align:left}
-.order-preview .op-total{text-align:right;font-size:17px;font-weight:700;margin:8px 0}
-.order-preview .op-note{font-size:15px;color:#555;margin:4px 0}
-.order-preview .op-debt{margin-top:18px;padding-top:14px;border-top:1.5px dashed #999;font-size:15px}
-.order-preview .op-debt span{font-weight:700}
+/* 合计区 */
+.order-preview .op-total-area{padding:12px 40px;border-top:1px solid #333;border-bottom:1px solid #333;text-align:right;font-size:18px;font-weight:700}
+/* 备注区 */
+.order-preview .op-note-area{padding:10px 40px;border-bottom:0.5px solid #ddd;font-size:14px;color:#555}
+/* 欠款区 */
+.order-preview .op-debt-area{padding:14px 40px;border-bottom:0.5px solid #ddd;font-size:15px}
+.order-preview .op-debt-line{display:inline-block;min-width:140px;border-bottom:1px solid #333;margin-left:6px}
+/* 底部说明 */
+.order-preview .op-footer{padding:10px 40px 20px;text-align:center;font-size:10px;color:#bbb}
 .preview-modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;display:none;flex-direction:column;background:#fff}
 .preview-modal.show{display:flex}
 .preview-actions{display:flex;gap:10px;padding:12px 16px;background:#f8f9fa;border-bottom:1px solid var(--border);align-items:center;justify-content:center}
@@ -692,21 +701,23 @@ function buildOrderHTML(order) {
         rows += '<tr><td>'+(i+1)+'</td><td class="td-name">'+esc(it.name)+'</td><td>'+esc(it.spec||'')+'</td><td>'+esc(it.unit)+'</td><td>'+it.quantity+'</td><td>'+it.sellPrice.toFixed(2)+'</td><td>'+(it.sellPrice*it.quantity).toFixed(2)+'</td></tr>';
     });
     var total = order.total;
-    return '<div class="op-company">深圳市亿客视频有限公司</div>' +
-        '<div class="op-english">MEIDAIZI BAG INDUSTRY CO,LTD.</div>' +
-        '<div class="op-info">地址：汕头市潮南区峡山街道</div>' +
-        '<div class="op-info">电话：18929622288&emsp;13539663322</div>' +
-        '<hr class="op-divider">' +
-        '<div class="op-customer">' +
-            '<span>收货单位：'+esc(order.customerName)+'</span>' +
-            '<span>联系人：'+esc(order.customerContact||'')+'</span>' +
+    return '<div class="op-top">' +
+        '<div class="op-company">亿客食品有限公司</div>' +
+        '<div class="op-info-row"><span>地址：汕头市潮南区峡山街道</span><span>电话：18929622288&emsp;13539663322</span></div>' +
+        '<hr class="op-info-divider">' +
+        '</div>' +
+        '<div class="op-customer-area">' +
+            '<span>客户：'+esc(order.customerName)+'</span>' +
             '<span>订货日期：'+order.orderDate+'</span>' +
             '<span>送货日期：'+(order.deliveryDate||'')+'</span>' +
         '</div>' +
+        '<div class="op-table-area">' +
         '<table class="op-table"><thead><tr><th>序号</th><th>商品名称</th><th>规格</th><th>单位</th><th>数量</th><th>单价(元)</th><th>金额(元)</th></tr></thead><tbody>'+rows+'</tbody></table>' +
-        '<div class="op-total">合计：¥'+total.toFixed(2)+'</div>' +
-        (order.note ? '<div class="op-note">备注：'+esc(order.note)+'</div>' : '') +
-        '<div class="op-debt">连上累欠：<span style="display:inline-block;min-width:120px;border-bottom:1px solid #333"></span></div>';
+        '</div>' +
+        '<div class="op-total-area">合计：¥'+total.toFixed(2)+'</div>' +
+        (order.note ? '<div class="op-note-area">备注：'+esc(order.note)+'</div>' : '') +
+        '<div class="op-debt-area">连上累欠：<span class="op-debt-line"></span></div>' +
+        '<div class="op-footer">感谢惠顾 · 亿客食品有限公司</div>';
 }
 
 // 显示预览弹窗
@@ -798,13 +809,11 @@ function downloadOrderExcel(id) {
 // 构建订货单Excel数据行
 function buildOrderExcelRows(order, total) {
     const rows = [
-        ['深圳市亿客视频有限公司', '', '', '', '', '', ''],
-        ['MEIDAIZI BAG INDUSTRY CO,LTD.', '', '', '', '', '', ''],
+        ['亿客食品有限公司', '', '', '', '', '', ''],
         ['地址：汕头市潮南区峡山街道', '', '', '', '', '', ''],
         ['电话：18929622288  13539663322', '', '', '', '', '', ''],
         ['', '', '', '', '', '', ''],
-        ['收货单位：' + order.customerName, '', '', '订货日期：' + order.orderDate, '', '', ''],
-        ['联系人：' + (order.customerContact||''), '', '', '送货日期：' + (order.deliveryDate||''), '', '', ''],
+        ['客户：' + order.customerName, '', '', '订货日期：' + order.orderDate, '', '送货日期：' + (order.deliveryDate||''), ''],
         ['', '', '', '', '', '', ''],
         ['序号', '商品名称', '规格', '单位', '数量', '单价(元)', '金额(元)'],
     ];
@@ -824,31 +833,21 @@ function applyOrderExcelStyle(ws, rows) {
     ];
     ws['!merges'] = [
         {s:{r:0,c:0},e:{r:0,c:6}},  // 公司名
-        {s:{r:1,c:0},e:{r:1,c:6}},  // 英文名
-        {s:{r:2,c:0},e:{r:2,c:6}},  // 地址
-        {s:{r:3,c:0},e:{r:3,c:6}},  // 电话
-        {s:{r:5,c:0},e:{r:5,c:2}},  // 收货单位
-        {s:{r:5,c:3},e:{r:5,c:6}},  // 订货日期
-        {s:{r:6,c:0},e:{r:6,c:2}},  // 联系人
-        {s:{r:6,c:3},e:{r:6,c:6}},  // 送货日期
+        {s:{r:1,c:0},e:{r:1,c:6}},  // 地址
+        {s:{r:2,c:0},e:{r:2,c:6}},  // 电话
         {s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:5}}, // 合计标签
         {s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:6}}, // 备注
     ];
-    // 设置公司名行高度和样式
+    // 设置公司名行加粗
     for (let c = 0; c < 7; c++) {
         const cell0 = XLSX.utils.encode_cell({r:0, c:c});
-        const cell1 = XLSX.utils.encode_cell({r:1, c:c});
         if (!ws[cell0]) ws[cell0] = {t:'s', v:''};
-        if (!ws[cell1]) ws[cell1] = {t:'s', v:''};
-        // 公司名加粗
         if (ws[cell0].s === undefined) ws[cell0].s = {};
         ws[cell0].s.font = {bold: true, sz: 18};
-        if (ws[cell1].s === undefined) ws[cell1].s = {};
-        ws[cell1].s.font = {bold: true, sz: 14};
     }
     // 表头加粗
     for (let c = 0; c < 7; c++) {
-        const hdr = XLSX.utils.encode_cell({r: 8, c: c});
+        const hdr = XLSX.utils.encode_cell({r: 6, c: c});
         if (!ws[hdr]) ws[hdr] = {t:'s', v:''};
         if (ws[hdr].s === undefined) ws[hdr].s = {};
         ws[hdr].s.font = {bold: true};
