@@ -168,6 +168,8 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 /* 欠款区 */
 .order-preview .op-debt-area{padding:14px 40px;border-bottom:0.5px solid #ddd;font-size:15px}
 .order-preview .op-debt-line{display:inline-block;min-width:140px;border-bottom:1px solid #333;margin-left:6px}
+/* 送货提货区 */
+.order-preview .op-delivery-area{padding:14px 40px;border-bottom:0.5px solid #ddd;font-size:15px;display:flex;gap:50px}
 /* 底部说明 */
 .order-preview .op-footer{padding:10px 40px 20px;text-align:center;font-size:10px;color:#bbb}
 .preview-modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;display:none;flex-direction:column;background:#fff}
@@ -715,6 +717,7 @@ function buildOrderHTML(order) {
         '<div class="op-total-area">合计：¥'+total.toFixed(2)+'</div>' +
         (order.note ? '<div class="op-note-area">备注：'+esc(order.note)+'</div>' : '') +
         '<div class="op-debt-area">连上累欠：<span class="op-debt-line">' + (order.debt ? esc(order.debt) : '') + '</span></div>' +
+        '<div class="op-delivery-area"><span>送货人：曾</span><span>提货人：</span></div>' +
         '<div class="op-footer">感谢惠顾 · 深圳市亿客食品有限公司</div>';
 }
 
@@ -839,6 +842,8 @@ function buildOrderExcelRows(order, total) {
     rows.push(['', '', '', '', '', '合计：', +total.toFixed(2)]);
     rows.push(['', '', '', '', '', '', '']);
     rows.push(['备注：' + (order.note||''), '', '', '', '', '', '']);
+    rows.push(['', '', '', '', '', '', '']);
+    rows.push(['送货人：曾', '', '', '提货人：', '', '', '']);
     return rows;
 }
 
@@ -852,8 +857,10 @@ function applyOrderExcelStyle(ws, rows) {
         {s:{r:1,c:0},e:{r:1,c:6}},  // 英文名
         {s:{r:2,c:0},e:{r:2,c:6}},  // 地址
         {s:{r:3,c:0},e:{r:3,c:6}},  // 电话
-        {s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:5}}, // 合计标签
-        {s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:6}}, // 备注
+        {s:{r:rows.length-5,c:0},e:{r:rows.length-5,c:5}}, // 合计标签
+        {s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:6}}, // 备注
+        {s:{r:rows.length-1,c:0},e:{r:rows.length-1,c:2}}, // 送货人
+        {s:{r:rows.length-1,c:3},e:{r:rows.length-1,c:6}}, // 提货人
     ];
     // 设置公司名行加粗加大
     for (var r = 0; r <= 1; r++) {
