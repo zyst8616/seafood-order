@@ -987,12 +987,23 @@ function generateInvExcel() {
     var schools = Object.keys(schoolMap);
     if (!schools.length) return alert('本月暂无订单记录');
 
+    // 计算全部学校汇总
+    var allBuyTotal = 0, allSellTotal = 0;
+    schools.forEach(function(s) { allBuyTotal += schoolMap[s].buyTotal; allSellTotal += schoolMap[s].sellTotal; });
+    var allProfit = allSellTotal - allBuyTotal;
+
     var rows = [];
-    rows.push(['进 销 存 明 细 表', '', '', '', '', '', '', '', '', '', '', '', '', '']);
-    rows.push(['月份：'+year+'年'+month+'月', '', '', '', '', '', '', '', '', '', '', '', '', '']);
-    rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '']);
-    rows.push(['进货', '', '', '', '', '', '', '出货', '', '', '', '', '收益', '学校名称']);
-    rows.push(['日期','产品名称','规格','数量','单位','单价','金额','日期','产品名称','规格','数量','单位','单价','金额','','']);
+    // 标题区（16列）
+    rows.push(['进 销 存 明 细 表', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    rows.push(['月份：'+year+'年'+month+'月', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    // 本月汇总
+    rows.push(['📊 本月汇总', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    rows.push(['进货总额', '', '', '', '', '', '¥'+allBuyTotal.toFixed(2), '出货总额', '', '', '', '', '', '¥'+allSellTotal.toFixed(2), '收益', '¥'+allProfit.toFixed(2)]);
+    rows.push(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    // 分组表头
+    rows.push(['进货', '', '', '', '', '', '', '出货', '', '', '', '', '', '', '收益', '学校名称']);
+    rows.push(['日期','产品名称','规格','数量','单位','单价','金额','日期','产品名称','规格','数量','单位','单价','金额','收益','学校名称']);
 
     schools.forEach(function(schoolName) {
         var data = schoolMap[schoolName];
@@ -1009,22 +1020,25 @@ function generateInvExcel() {
                 var s = data.sell[i];
                 var sellDate = (i === 0 || s.date !== data.sell[i-1].date) ? s.date : '';
                 row.push(sellDate, s.name, s.spec, s.qty, s.unit, s.price, s.amount);
+                // 单个商品收益 = 出货金额 - 进货金额
+                var itemProfit = +(s.amount - (i < data.buy.length ? data.buy[i].amount : 0)).toFixed(2);
+                row.push(itemProfit);
             }
-            else row.push('','','','','','','');
-            row.push(i===0 ? (data.sellTotal - data.buyTotal).toFixed(2) : '');
+            else row.push('','','','','','','','');
             row.push(i===0 ? schoolName : '');
             rows.push(row);
         }
-        rows.push(['进货小计：¥'+data.buyTotal.toFixed(2),'','','','','','','出货小计：¥'+data.sellTotal.toFixed(2),'','','','','','收益：¥'+(data.sellTotal-data.buyTotal).toFixed(2), schoolName]);
-        rows.push(['','','','','','','','','','','','','','']);
+        // 小计行（16列）
+        rows.push(['进货小计：¥'+data.buyTotal.toFixed(2),'','','','','','','出货小计：¥'+data.sellTotal.toFixed(2),'','','','','','','收益：¥'+(data.sellTotal-data.buyTotal).toFixed(2), schoolName]);
+        rows.push(['','','','','','','','','','','','','','','','']);
     });
 
     var ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},{wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},{wch:10},{wch:10}];
     ws['!merges'] = [
-        {s:{r:0,c:0},e:{r:0,c:13}}, {s:{r:1,c:0},e:{r:1,c:13}},
-        {s:{r:3,c:0},e:{r:3,c:6}}, {s:{r:3,c:7},e:{r:3,c:13}},
-        {s:{r:3,c:14},e:{r:3,c:14}}, {s:{r:3,c:15},e:{r:3,c:15}},
+        {s:{r:0,c:0},e:{r:0,c:15}}, {s:{r:1,c:0},e:{r:1,c:15}},  // 标题
+        {s:{r:3,c:0},e:{r:3,c:15}},  // 本月汇总标签
+        {s:{r:6,c:0},e:{r:6,c:6}}, {s:{r:6,c:7},e:{r:6,c:13}}, {s:{r:6,c:14},e:{r:6,c:14}}, {s:{r:6,c:15},e:{r:6,c:15}},  // 分组表头
     ];
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '进销存明细表');
