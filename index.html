@@ -1035,18 +1035,12 @@ function generateInvExcel() {
             row.push(i===0 ? schoolName : '');
             rows.push(row);
         }
-        // 小计行 — 三块合并，干净简洁，不加学校名
+        // 小计行 — 整行合并，三项空格分隔，彻底消除列线
         var sumRowIdx = rows.length;
         var sumRow = ['','','','','','','','','','','','','','','',''];
-        sumRow[0] = '进货小计：¥' + data.buyTotal.toFixed(2);
-        sumRow[7] = '出货小计：¥' + data.sellTotal.toFixed(2);
-        sumRow[14] = '收益：¥' + (data.sellTotal - data.buyTotal).toFixed(2);
+        sumRow[0] = '进货小计：¥' + data.buyTotal.toFixed(2) + '          出货小计：¥' + data.sellTotal.toFixed(2) + '          收益：¥' + (data.sellTotal - data.buyTotal).toFixed(2);
         rows.push(sumRow);
-        merges.push(
-            {s:{r:sumRowIdx, c:0}, e:{r:sumRowIdx, c:6}},
-            {s:{r:sumRowIdx, c:7}, e:{r:sumRowIdx, c:13}},
-            {s:{r:sumRowIdx, c:14}, e:{r:sumRowIdx, c:15}}
-        );
+        merges.push({s:{r:sumRowIdx, c:0}, e:{r:sumRowIdx, c:15}});
         // 空行分隔
         rows.push(['','','','','','','','','','','','','','','','']);
     });
