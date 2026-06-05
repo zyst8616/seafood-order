@@ -999,9 +999,17 @@ function generateInvExcel() {
         var maxRows = Math.max(data.buy.length, data.sell.length);
         for (var i = 0; i < maxRows; i++) {
             var row = [];
-            if (i < data.buy.length) { var b = data.buy[i]; row.push(b.date, b.name, b.spec, b.qty, b.unit, b.price, b.amount); }
+            if (i < data.buy.length) {
+                var b = data.buy[i];
+                var buyDate = (i === 0 || b.date !== data.buy[i-1].date) ? b.date : '';
+                row.push(buyDate, b.name, b.spec, b.qty, b.unit, b.price, b.amount);
+            }
             else row.push('','','','','','','');
-            if (i < data.sell.length) { var s = data.sell[i]; row.push(s.date, s.name, s.spec, s.qty, s.unit, s.price, s.amount); }
+            if (i < data.sell.length) {
+                var s = data.sell[i];
+                var sellDate = (i === 0 || s.date !== data.sell[i-1].date) ? s.date : '';
+                row.push(sellDate, s.name, s.spec, s.qty, s.unit, s.price, s.amount);
+            }
             else row.push('','','','','','','');
             row.push(i===0 ? (data.sellTotal - data.buyTotal).toFixed(2) : '');
             row.push(i===0 ? schoolName : '');
