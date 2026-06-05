@@ -1005,6 +1005,13 @@ function generateInvExcel() {
     rows.push(['进货', '', '', '', '', '', '', '出货', '', '', '', '', '', '', '收益', '学校名称']);
     rows.push(['日期','产品名称','规格','数量','单位','单价','金额','日期','产品名称','规格','数量','单位','单价','金额','收益','学校名称']);
 
+    // 合并单元格列表（动态追加各校小计行）
+    var merges = [
+        {s:{r:0,c:0},e:{r:0,c:15}}, {s:{r:1,c:0},e:{r:1,c:15}},  // 标题
+        {s:{r:3,c:0},e:{r:3,c:15}},  // 本月汇总标签
+        {s:{r:6,c:0},e:{r:6,c:6}}, {s:{r:6,c:7},e:{r:6,c:13}}, {s:{r:6,c:14},e:{r:6,c:14}}, {s:{r:6,c:15},e:{r:6,c:15}},  // 分组表头
+    ];
+
     schools.forEach(function(schoolName) {
         var data = schoolMap[schoolName];
         var maxRows = Math.max(data.buy.length, data.sell.length);
@@ -1028,18 +1035,25 @@ function generateInvExcel() {
             row.push(i===0 ? schoolName : '');
             rows.push(row);
         }
-        // 小计行（16列）
-        rows.push(['进货小计：¥'+data.buyTotal.toFixed(2),'','','','','','','出货小计：¥'+data.sellTotal.toFixed(2),'','','','','','','收益：¥'+(data.sellTotal-data.buyTotal).toFixed(2), schoolName]);
+        // 小计行 — 三块合并，干净简洁，不加学校名
+        var sumRowIdx = rows.length;
+        var sumRow = ['','','','','','','','','','','','','','','',''];
+        sumRow[0] = '进货小计：¥' + data.buyTotal.toFixed(2);
+        sumRow[7] = '出货小计：¥' + data.sellTotal.toFixed(2);
+        sumRow[14] = '收益：¥' + (data.sellTotal - data.buyTotal).toFixed(2);
+        rows.push(sumRow);
+        merges.push(
+            {s:{r:sumRowIdx, c:0}, e:{r:sumRowIdx, c:6}},
+            {s:{r:sumRowIdx, c:7}, e:{r:sumRowIdx, c:13}},
+            {s:{r:sumRowIdx, c:14}, e:{r:sumRowIdx, c:15}}
+        );
+        // 空行分隔
         rows.push(['','','','','','','','','','','','','','','','']);
     });
 
     var ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},{wch:10},{wch:14},{wch:6},{wch:6},{wch:5},{wch:8},{wch:8},{wch:10},{wch:10}];
-    ws['!merges'] = [
-        {s:{r:0,c:0},e:{r:0,c:15}}, {s:{r:1,c:0},e:{r:1,c:15}},  // 标题
-        {s:{r:3,c:0},e:{r:3,c:15}},  // 本月汇总标签
-        {s:{r:6,c:0},e:{r:6,c:6}}, {s:{r:6,c:7},e:{r:6,c:13}}, {s:{r:6,c:14},e:{r:6,c:14}}, {s:{r:6,c:15},e:{r:6,c:15}},  // 分组表头
-    ];
+    ws['!merges'] = merges;
     var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '进销存明细表');
     XLSX.writeFile(wb, '进销存明细表_'+year+'年'+month+'月.xlsx');
