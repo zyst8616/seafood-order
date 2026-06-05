@@ -473,12 +473,13 @@ function editCustomer(id) {
 }
 
 function updateCustomer(id) {
-    const c = DB.get('customers').find(x => x.id === id); if (!c) return;
+    const customers = DB.get('customers');
+    const c = customers.find(x => x.id === id); if (!c) return;
     c.name = document.getElementById('ecName').value.trim();
     c.contact = document.getElementById('ecContact').value.trim();
     c.phone = document.getElementById('ecPhone').value.trim();
     c.address = document.getElementById('ecAddress').value.trim();
-    DB.set('customers', DB.get('customers'));
+    DB.set('customers', customers);
     closeModal(); refreshCustomerList();
 }
 
@@ -532,13 +533,14 @@ function editProduct(id) {
 }
 
 function updateProduct(id) {
-    const p = DB.get('products').find(x => x.id === id); if (!p) return;
+    const products = DB.get('products');
+    const p = products.find(x => x.id === id); if (!p) return;
     p.name = document.getElementById('epName').value.trim();
     p.spec = document.getElementById('epSpec').value.trim();
     p.unit = document.getElementById('epUnit').value.trim() || '包';
     p.buyPrice = parseFloat(document.getElementById('epBuyPrice').value) || 0;
     p.sellPrice = parseFloat(document.getElementById('epSellPrice').value) || 0;
-    DB.set('products', DB.get('products'));
+    DB.set('products', products);
     closeModal(); refreshProductList();
 }
 
