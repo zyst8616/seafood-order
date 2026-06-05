@@ -149,7 +149,8 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 .order-preview{width:750px;background:#fff;padding:0;font-family:"PingFang SC","Microsoft YaHei",sans-serif;border:2px solid #333}
 /* 顶部公司信息区 */
 .order-preview .op-top{text-align:center;padding:28px 40px 0;border-bottom:0.5px solid #ddd}
-.order-preview .op-company{font-size:36px;font-weight:900;margin-bottom:12px;letter-spacing:4px}
+.order-preview .op-company{font-size:32px;font-weight:900;margin-bottom:2px;letter-spacing:4px}
+.order-preview .op-company-en{font-size:16px;font-weight:700;margin-bottom:10px;letter-spacing:2px}
 .order-preview .op-info-row{display:flex;justify-content:center;gap:30px;font-size:10px;color:#888;margin-bottom:4px}
 .order-preview .op-info-divider{width:60%;margin:8px auto 0;border:none;border-top:0.5px solid #e8e8e8}
 /* 客户信息区 */
@@ -680,22 +681,33 @@ function renderOrderToImage(order, callback) {
     }, 200);
 }
 
-// 构建订单HTML（完美排版）
+// 构建订单HTML（正式纸质销售单样式，固定10行表格）
 function buildOrderHTML(order) {
     var rows = '';
-    order.items.forEach(function(it, i) {
-        rows += '<tr><td>'+(i+1)+'</td><td class="td-name">'+esc(it.name)+'</td><td>'+esc(it.spec||'')+'</td><td>'+esc(it.unit)+'</td><td>'+it.quantity+'</td><td>'+it.sellPrice.toFixed(2)+'</td><td>'+(it.sellPrice*it.quantity).toFixed(2)+'</td></tr>';
-    });
+    var FIXED_ROWS = 10;
+    for (var i = 0; i < FIXED_ROWS; i++) {
+        if (i < order.items.length) {
+            var it = order.items[i];
+            rows += '<tr><td>'+(i+1)+'</td><td class="td-name">'+esc(it.name)+'</td><td>'+esc(it.spec||'')+'</td><td>'+esc(it.unit)+'</td><td>'+it.quantity+'</td><td>'+it.sellPrice.toFixed(2)+'</td><td>'+(it.sellPrice*it.quantity).toFixed(2)+'</td></tr>';
+        } else {
+            rows += '<tr><td>'+(i+1)+'</td><td class="td-name">&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>';
+        }
+    }
+    // 如果超过10个商品，继续追加
+    for (var j = FIXED_ROWS; j < order.items.length; j++) {
+        var ex = order.items[j];
+        rows += '<tr><td>'+(j+1)+'</td><td class="td-name">'+esc(ex.name)+'</td><td>'+esc(ex.spec||'')+'</td><td>'+esc(ex.unit)+'</td><td>'+ex.quantity+'</td><td>'+ex.sellPrice.toFixed(2)+'</td><td>'+(ex.sellPrice*ex.quantity).toFixed(2)+'</td></tr>';
+    }
     var total = order.total;
     return '<div class="op-top">' +
-        '<div class="op-company">亿客食品有限公司</div>' +
-        '<div class="op-info-row"><span>地址：汕头市潮南区峡山街道</span><span>电话：18929622288&emsp;13539663322</span></div>' +
+        '<div class="op-company">深圳市亿客食品有限公司</div>' +
+        '<div class="op-company-en">MEIDAIZI BAG INDUSTRY CO,LTD.</div>' +
+        '<div class="op-info-row"><span>地址：汕头市潮南区峡山街道</span><span>电话：18929622288</span></div>' +
         '<hr class="op-info-divider">' +
         '</div>' +
         '<div class="op-customer-area">' +
             '<span>客户：'+esc(order.customerName)+'</span>' +
             '<span>订货日期：'+order.orderDate+'</span>' +
-            '<span>送货日期：'+(order.deliveryDate||'')+'</span>' +
         '</div>' +
         '<div class="op-table-area">' +
         '<table class="op-table"><thead><tr><th>序号</th><th>商品名称</th><th>规格</th><th>单位</th><th>数量</th><th>单价(元)</th><th>金额(元)</th></tr></thead><tbody>'+rows+'</tbody></table>' +
@@ -703,7 +715,7 @@ function buildOrderHTML(order) {
         '<div class="op-total-area">合计：¥'+total.toFixed(2)+'</div>' +
         (order.note ? '<div class="op-note-area">备注：'+esc(order.note)+'</div>' : '') +
         '<div class="op-debt-area">连上累欠：<span class="op-debt-line">' + (order.debt ? esc(order.debt) : '') + '</span></div>' +
-        '<div class="op-footer">感谢惠顾 · 亿客食品有限公司</div>';
+        '<div class="op-footer">感谢惠顾 · 深圳市亿客食品有限公司</div>';
 }
 
 // 显示预览弹窗
@@ -799,20 +811,31 @@ function downloadOrderExcel(id) {
     XLSX.writeFile(wb, `订货单_${order.customerName}_${order.orderDate}.xlsx`);
 }
 
-// 构建订货单Excel数据行
+// 构建订货单Excel数据行（固定10行表格）
 function buildOrderExcelRows(order, total) {
+    var FIXED_ROWS = 10;
     const rows = [
-        ['亿客食品有限公司', '', '', '', '', '', ''],
+        ['深圳市亿客食品有限公司', '', '', '', '', '', ''],
+        ['MEIDAIZI BAG INDUSTRY CO,LTD.', '', '', '', '', '', ''],
         ['地址：汕头市潮南区峡山街道', '', '', '', '', '', ''],
-        ['电话：18929622288  13539663322', '', '', '', '', '', ''],
+        ['电话：18929622288', '', '', '', '', '', ''],
         ['', '', '', '', '', '', ''],
-        ['客户：' + order.customerName, '', '', '订货日期：' + order.orderDate, '', '送货日期：' + (order.deliveryDate||''), ''],
+        ['客户：' + order.customerName, '', '', '订货日期：' + order.orderDate, '', '', ''],
         ['', '', '', '', '', '', ''],
         ['序号', '商品名称', '规格', '单位', '数量', '单价(元)', '金额(元)'],
     ];
-    order.items.forEach((it, i) => {
-        rows.push([i+1, it.name, it.spec||'', it.unit, it.quantity, it.sellPrice, +(it.sellPrice * it.quantity).toFixed(2)]);
-    });
+    for (var i = 0; i < FIXED_ROWS; i++) {
+        if (i < order.items.length) {
+            var it = order.items[i];
+            rows.push([i+1, it.name, it.spec||'', it.unit, it.quantity, it.sellPrice, +(it.sellPrice * it.quantity).toFixed(2)]);
+        } else {
+            rows.push([i+1, '', '', '', '', '', '']);
+        }
+    }
+    for (var j = FIXED_ROWS; j < order.items.length; j++) {
+        var ex = order.items[j];
+        rows.push([j+1, ex.name, ex.spec||'', ex.unit, ex.quantity, ex.sellPrice, +(ex.sellPrice * ex.quantity).toFixed(2)]);
+    }
     rows.push(['', '', '', '', '', '合计：', +total.toFixed(2)]);
     rows.push(['', '', '', '', '', '', '']);
     rows.push(['备注：' + (order.note||''), '', '', '', '', '', '']);
@@ -826,21 +849,24 @@ function applyOrderExcelStyle(ws, rows) {
     ];
     ws['!merges'] = [
         {s:{r:0,c:0},e:{r:0,c:6}},  // 公司名
-        {s:{r:1,c:0},e:{r:1,c:6}},  // 地址
-        {s:{r:2,c:0},e:{r:2,c:6}},  // 电话
+        {s:{r:1,c:0},e:{r:1,c:6}},  // 英文名
+        {s:{r:2,c:0},e:{r:2,c:6}},  // 地址
+        {s:{r:3,c:0},e:{r:3,c:6}},  // 电话
         {s:{r:rows.length-3,c:0},e:{r:rows.length-3,c:5}}, // 合计标签
         {s:{r:rows.length-2,c:0},e:{r:rows.length-2,c:6}}, // 备注
     ];
-    // 设置公司名行加粗
-    for (let c = 0; c < 7; c++) {
-        const cell0 = XLSX.utils.encode_cell({r:0, c:c});
-        if (!ws[cell0]) ws[cell0] = {t:'s', v:''};
-        if (ws[cell0].s === undefined) ws[cell0].s = {};
-        ws[cell0].s.font = {bold: true, sz: 18};
+    // 设置公司名行加粗加大
+    for (var r = 0; r <= 1; r++) {
+        for (var c = 0; c < 7; c++) {
+            var cell0 = XLSX.utils.encode_cell({r:r, c:c});
+            if (!ws[cell0]) ws[cell0] = {t:'s', v:''};
+            if (ws[cell0].s === undefined) ws[cell0].s = {};
+            ws[cell0].s.font = {bold: true, sz: r === 0 ? 18 : 14};
+        }
     }
-    // 表头加粗
-    for (let c = 0; c < 7; c++) {
-        const hdr = XLSX.utils.encode_cell({r: 6, c: c});
+    // 表头加粗（表头在第7行）
+    for (var c = 0; c < 7; c++) {
+        var hdr = XLSX.utils.encode_cell({r: 7, c: c});
         if (!ws[hdr]) ws[hdr] = {t:'s', v:''};
         if (ws[hdr].s === undefined) ws[hdr].s = {};
         ws[hdr].s.font = {bold: true};
