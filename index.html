@@ -388,6 +388,40 @@ function initData() {
         if (p.spec === undefined) { p.spec = ''; updated = true; }
     });
     if (updated) DB.set('products', products);
+    // 确保 nextId 不低于已有产品的最大 ID（防止 ID 重置导致重复）
+    let allP = DB.get('products');
+    let maxId = allP.reduce(function(m, p) { return Math.max(m, p.id || 0); }, 0);
+    let nid = DB.get('nextId');
+    if (!nid.products || nid.products <= maxId) {
+        nid.products = maxId + 1;
+        DB.set('nextId', nid);
+    }
+    // 自动修复已有重复 ID
+    fixDuplicateProductIds(allP);
+}
+
+// 修复重复的产品 ID（每次页面加载时自动检测修复）
+function fixDuplicateProductIds(products) {
+    var seen = {};
+    var hasDupes = false;
+    for (var i = 0; i < products.length; i++) {
+        if (seen[products[i].id]) { hasDupes = true; break; }
+        seen[products[i].id] = true;
+    }
+    if (!hasDupes) return;
+    var maxId = products.reduce(function(m, p) { return Math.max(m, p.id || 0); }, 0);
+    var used = {};
+    products.forEach(function(p) {
+        if (used[p.id]) {
+            p.id = ++maxId;
+        }
+        used[p.id] = true;
+    });
+    DB.set('products', products);
+    // 同时更新 nextId
+    var nid = DB.get('nextId');
+    nid.products = maxId + 1;
+    DB.set('nextId', nid);
 }
 
 // 兼容旧数据
@@ -593,7 +627,7 @@ function searchProducts() {
         resultsDiv.innerHTML = '<div class="search-empty">没有匹配的产品</div>';
     } else {
         resultsDiv.innerHTML = results.map(function(p) {
-            return '<div class="search-item" onclick="selectOrderProduct('+p.id+')"><span class="search-item-name">[#'+p.id+'] '+esc(p.name)+' '+esc(p.spec||'')+'</span><span class="search-item-price">¥'+p.sellPrice.toFixed(2)+'/'+esc(p.unit)+'</span></div>';
+            return '<div class="search-item" onclick="selectOrderProduct('+p.id+')"><span class="search-item-name">'+esc(p.name)+' '+esc(p.spec||'')+'</span><span class="search-item-price">¥'+p.sellPrice.toFixed(2)+'/'+esc(p.unit)+'</span></div>';
         }).join('');
     }
     resultsDiv.style.display = 'block';
@@ -601,8 +635,6 @@ function searchProducts() {
 
 function selectOrderProduct(pid) {
     const p = DB.get('products').find(x => x.id === pid); if (!p) return;
-    // 【调试】弹窗确认实际选中了什么
-    alert('✅ 选中产品\n名称：' + p.name + '\nID：' + p.id + '\n规格：' + (p.spec||'无') + '\n单位：' + p.unit);
     orderItems.push({id: p.id, name: p.name, spec: p.spec, unit: p.unit, sellPrice: p.sellPrice, buyPrice: p.buyPrice, quantity: 1});
     renderOrderItems();
     document.getElementById('productSearch').value = '';
