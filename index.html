@@ -593,7 +593,7 @@ function searchProducts() {
         resultsDiv.innerHTML = '<div class="search-empty">没有匹配的产品</div>';
     } else {
         resultsDiv.innerHTML = results.map(function(p) {
-            return '<div class="search-item" onclick="selectOrderProduct('+p.id+')"><span class="search-item-name">'+esc(p.name)+' '+esc(p.spec||'')+'</span><span class="search-item-price">¥'+p.sellPrice.toFixed(2)+'/'+esc(p.unit)+'</span></div>';
+            return '<div class="search-item" onclick="selectOrderProduct('+p.id+')"><span class="search-item-name">[#'+p.id+'] '+esc(p.name)+' '+esc(p.spec||'')+'</span><span class="search-item-price">¥'+p.sellPrice.toFixed(2)+'/'+esc(p.unit)+'</span></div>';
         }).join('');
     }
     resultsDiv.style.display = 'block';
@@ -601,6 +601,8 @@ function searchProducts() {
 
 function selectOrderProduct(pid) {
     const p = DB.get('products').find(x => x.id === pid); if (!p) return;
+    // 【调试】弹窗确认实际选中了什么
+    alert('✅ 选中产品\n名称：' + p.name + '\nID：' + p.id + '\n规格：' + (p.spec||'无') + '\n单位：' + p.unit);
     orderItems.push({id: p.id, name: p.name, spec: p.spec, unit: p.unit, sellPrice: p.sellPrice, buyPrice: p.buyPrice, quantity: 1});
     renderOrderItems();
     document.getElementById('productSearch').value = '';
