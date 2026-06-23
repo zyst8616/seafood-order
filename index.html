@@ -206,15 +206,6 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
                 <span class="btn-icon">📦</span><span class="btn-label">产品</span>
             </button>
         </div>
-        <div class="card" style="margin-top:10px">
-            <div class="card-title">🔒 数据备份</div>
-            <div class="hint" id="backupStats">正在读取数据...</div>
-            <div class="f-row f-row-2" style="margin-top:8px">
-                <button class="btn btn-green" onclick="exportBackup()">导出备份</button>
-                <button class="btn btn-outline" onclick="document.getElementById('backupFile').click()">恢复备份</button>
-            </div>
-            <div class="hint">换手机、清缓存或微信浏览器数据异常时，可用备份文件恢复。</div>
-        </div>
     </div>
 
     <!-- ========== 新建订单 ========== -->
@@ -310,8 +301,6 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
         <button class="tab-btn" onclick="showPage('products')"><span class="tab-icon">📦</span>产品</button>
     </div>
 </div>
-
-<input type="file" id="backupFile" accept="application/json,.json" style="display:none" onchange="importBackupFile(this)">
 
 <!-- 编辑弹窗 -->
 <div class="modal" id="editModal"><div class="modal-bg" onclick="closeModal()"></div><div class="modal-box" id="editModalContent"></div></div>
@@ -476,7 +465,6 @@ function showPage(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     const tabMap = {home:0, 'order-new':1, inv:2, customers:3, products:4};
     if (tabMap[name] !== undefined) document.querySelectorAll('.tab-btn')[tabMap[name]].classList.add('active');
-    if (name === 'home') refreshHomeStats();
     if (name === 'order-new') refreshOrderPage();
     if (name === 'orders') refreshOrderList();
     if (name === 'order-detail') { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); }
@@ -485,98 +473,6 @@ function showPage(name) {
     if (name === 'inv') refreshInvPage();
 }
 
-// ==================== 数据备份与恢复 ====================
-const BACKUP_KEYS = ['customers', 'products', 'orders', 'nextId'];
-
-function refreshHomeStats() {
-    var el = document.getElementById('backupStats');
-    if (!el) return;
-    var customers = DB.get('customers').length;
-    var products = DB.get('products').length;
-    var orders = DB.get('orders').length;
-    el.textContent = '当前数据：' + customers + ' 个幼儿园，' + products + ' 个产品，' + orders + ' 笔订单。';
-}
-
-function exportBackup() {
-    var data = {
-        app: 'seafood-order',
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        data: {}
-    };
-    BACKUP_KEYS.forEach(function(k) { data.data[k] = DB.get(k); });
-    var text = JSON.stringify(data, null, 2);
-    var blob = new Blob([text], {type: 'application/json;charset=utf-8'});
-    var dateText = new Date().toISOString().slice(0, 10);
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = '海产订单备份_' + dateText + '.json';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function() {
-        URL.revokeObjectURL(a.href);
-        a.remove();
-    }, 0);
-}
-
-function importBackupFile(input) {
-    var file = input.files && input.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function() {
-        try {
-            var backup = JSON.parse(reader.result);
-            restoreBackup(backup);
-        } catch (e) {
-            alert('备份文件读取失败，请确认选择的是本系统导出的 JSON 文件。');
-        } finally {
-            input.value = '';
-        }
-    };
-    reader.readAsText(file, 'UTF-8');
-}
-
-function restoreBackup(backup) {
-    if (!backup || backup.app !== 'seafood-order' || !backup.data) {
-        alert('这不是有效的海产订单备份文件。');
-        return;
-    }
-    var data = backup.data;
-    if (!Array.isArray(data.customers) || !Array.isArray(data.products) || !Array.isArray(data.orders)) {
-        alert('备份文件缺少必要数据，无法恢复。');
-        return;
-    }
-    var msg = '恢复后会覆盖当前浏览器里的数据。\n\n备份内容：' +
-        data.customers.length + ' 个幼儿园，' + data.products.length + ' 个产品，' + data.orders.length + ' 笔订单。\n\n确定恢复吗？';
-    if (!confirm(msg)) return;
-
-    DB.set('customers', data.customers);
-    DB.set('products', data.products);
-    DB.set('orders', data.orders);
-    DB.set('nextId', buildRestoredNextId(data));
-    localStorage.setItem('seafood_v2_inited', '1');
-    localStorage.setItem('seafood_v2_migrated', '1');
-
-    fixDuplicateProductIds(DB.get('products'));
-    refreshCustomerList();
-    refreshProductList();
-    refreshHomeStats();
-    showPage('home');
-    alert('数据已恢复完成。');
-}
-
-function buildRestoredNextId(data) {
-    var saved = data.nextId && typeof data.nextId === 'object' ? data.nextId : {};
-    return {
-        customers: Math.max(saved.customers || 1, maxId(data.customers) + 1),
-        products: Math.max(saved.products || 1, maxId(data.products) + 1),
-        orders: Math.max(saved.orders || 1, maxId(data.orders) + 1)
-    };
-}
-
-function maxId(list) {
-    return list.reduce(function(m, item) { return Math.max(m, Number(item.id) || 0); }, 0);
-}
 // ==================== 幼儿园管理 ====================
 function refreshCustomerList() {
     const list = document.getElementById('customerList');
@@ -1209,7 +1105,6 @@ document.addEventListener('click', function(e) {
 });
 
 // 初始化
-refreshHomeStats();
 refreshCustomerList();
 refreshProductList();
 </script>
